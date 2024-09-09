@@ -1,0 +1,54 @@
+Pull,Path,Diff_hunk,Comment
+27,src/main/java/org/apache/commons/pool2/PoolUtils.java,"@@ -307,6 +307,8 @@ public static void checkRethrow(final Throwable t) {
+      * @param pool
+      *            the ObjectPool to be ""wrapped"" in a synchronized ObjectPool.
+      * @param <T> the type of objects in the pool
++     * @throws IllegalArgumentException
++     *             when <code>pool</code> is <code>null</code>.","[{'comment': 'Please use `{@code ...}` instead of HTML tags, it is more succinct and less error prone.', 'commenter': 'garydgregory'}, {'comment': 'I used html tags because I saw the other Javadoc in this class are using it.  Do you want me to change them as well?', 'commenter': 'pengyunie'}, {'comment': 'That would be great :-)', 'commenter': 'garydgregory'}, {'comment': 'I made the change in the new commit, please take a look', 'commenter': 'pengyunie'}]"
+67,src/main/java/org/apache/commons/pool2/impl/GenericKeyedObjectPool.java,"@@ -267,6 +272,25 @@ public GenericKeyedObjectPool(final KeyedPooledObjectFactory<K, T> factory,
+         setConfig(config);
+     }
+ 
++    /**
++     * Creates a new {@code GenericKeyedObjectPool} that tracks and destroys
++     * objects that are checked out, but never returned to the pool.
++     *
++     * @param factory   The object factory to be used to create object instances
++     *                  used by this pool
++     * @param config    The base pool configuration to use for this pool instance.
++     *                  The configuration is used by value. Subsequent changes to
++     *                  the configuration object will not be reflected in the
++     *                  pool.
++     * @param abandonedConfig  Configuration for abandoned object identification
++     *                         and removal.  The configuration is used by value.
++     */","[{'comment': 'Just reviewing details: Please add `@since` tags to new public and protected methods.', 'commenter': 'garydgregory'}, {'comment': 'Added `@since` tags', 'commenter': 'JSurf'}]"
+67,src/main/java/org/apache/commons/pool2/impl/GenericKeyedObjectPoolMXBean.java,"@@ -91,6 +91,12 @@
+      */
+     boolean getLifo();
+ 
++    /**","[{'comment': 'You MUST use default methods when adding to an interface in order to preserve binary compatibility.\r\n', 'commenter': 'garydgregory'}, {'comment': 'Could easily do, but the class had already a comment that this interface is subject to change:\r\n\r\n```\r\n * NOTE: This interface exists only to define those attributes and methods that\r\n *       will be made available via JMX. It must not be implemented by clients\r\n *       as it is subject to change between major, minor and patch version\r\n *       releases of commons pool. Clients that implement this interface may\r\n *       not, therefore, be able to upgrade to a new minor or patch release\r\n *       without requiring code changes.\r\n\r\n```', 'commenter': 'JSurf'}, {'comment': 'Sure, but I bet this comment was written pre-Java 8 so I think you can drop that comment when you add default methods.', 'commenter': 'garydgregory'}, {'comment': 'Added default methods to the newly added methods', 'commenter': 'JSurf'}]"
+79,src/test/java/org/apache/commons/pool2/impl/TestAbandonedObjectPool.java,"@@ -409,7 +409,7 @@ public void testRemoveAbandonedWhileReturning() throws Exception {
+         pool = new GenericObjectPool<>(
+              // validate takes 1 second
+              new SimpleFactory(0, 1000),
+-             new GenericObjectPoolConfig<PooledTestObject>(), abandonedConfig);
++                new GenericObjectPoolConfig<>(), abandonedConfig);","[{'comment': 'Formatting nit.', 'commenter': 'garydgregory'}]"
+79,src/test/java/org/apache/commons/pool2/impl/TestAbandonedObjectPool.java,"@@ -221,7 +221,7 @@ public void setUp() throws Exception {
+ 
+         pool = new GenericObjectPool<>(
+                new SimpleFactory(),
+-               new GenericObjectPoolConfig<PooledTestObject>(),
++                new GenericObjectPoolConfig<>(),","[{'comment': 'Formatting nit.', 'commenter': 'garydgregory'}]"
+79,src/test/java/org/apache/commons/pool2/impl/TestAbandonedObjectPool.java,"@@ -375,7 +375,7 @@ public void testDestroyModeAbandoned() throws Exception {
+         pool = new GenericObjectPool<>(
+              // validate takes 1 second
+              new SimpleFactory(0, 0),
+-             new GenericObjectPoolConfig<PooledTestObject>(), abandonedConfig);
++                new GenericObjectPoolConfig<>(), abandonedConfig);","[{'comment': 'Formatting nit.', 'commenter': 'garydgregory'}]"
+83,src/test/java/org/apache/commons/pool2/TestObjectPool.java,"@@ -17,17 +17,17 @@
+ package org.apache.commons.pool2;
+ 
+ 
+-import static org.junit.jupiter.api.Assertions.assertEquals;
+-import static org.junit.jupiter.api.Assertions.assertTrue;
+-import static org.junit.jupiter.api.Assertions.fail;","[{'comment': 'Statics come first, see my commit earlier today, so you do not need to update the import order.\r\n\r\n', 'commenter': 'garydgregory'}, {'comment': 'True. \r\nChanged.\r\nSorry @garydgregory \r\nTY', 'commenter': 'arturobernalg'}]"

@@ -1,0 +1,3081 @@
+Pull,Path,Diff_hunk,Comment
+166,rt/transports/jms/src/test/java/org/apache/cxf/transport/jms/RequestResponseTest.java,"@@ -76,14 +76,14 @@ public void testRequestQueueResponseStaticQueue() throws Exception {
+         sendAndReceiveMessages(ei, false);
+     }
+     
+-    @Test
++    //@Test","[{'comment': 'why is it necessary to disable this test?', 'commenter': 'deki'}]"
+166,rt/transports/jms/src/test/java/org/apache/cxf/transport/jms/RequestResponseTest.java,"@@ -76,14 +76,14 @@ public void testRequestQueueResponseStaticQueue() throws Exception {
+         sendAndReceiveMessages(ei, false);
+     }
+     
+-    @Test
++    //@Test
+     public void testRequestTopicResponseTempQueue() throws Exception {
+         EndpointInfo ei = setupServiceInfo(""http://cxf.apache.org/jms_simple"", ""/wsdl/jms_spec_testsuite.wsdl"",
+                          ""JMSSimpleService002X"", ""SimplePortTopicRequest"");
+         sendAndReceiveMessages(ei, true);
+     }
+     
+-    @Test
++    //@Test","[{'comment': 'why is it necessary to disable this test?', 'commenter': 'deki'}, {'comment': 'because it did not worked in master branch, and I have no time to fix that old bug, and all unit test did not pass.\r\nToo much time passed from PR...', 'commenter': 'nikolobok'}, {'comment': ""Just leave it as it is. Don't worry about the failing build."", 'commenter': 'deki'}]"
+261,integration/spring-boot/autoconfigure/pom.xml,"@@ -30,6 +30,13 @@
+         <version>3.2.0-SNAPSHOT</version>
+         <relativePath>../../../parent/pom.xml</relativePath>
+     </parent>
++  <properties>","[{'comment': 'please take a look at cxf-parent. most of the versions are already given there.', 'commenter': 'deki'}]"
+276,rt/frontend/jaxws/src/main/java/org/apache/cxf/jaxws/ServiceImpl.java,"@@ -589,8 +589,7 @@ private QName getPortTypeName(Class<?> serviceEndpointInterface) {
+                 try {
+                     seiClass = Thread.currentThread().getContextClassLoader().loadClass(epi);
+                 } catch (ClassNotFoundException e) {
+-                    Message msg = new Message(""COULD_NOT_LOAD_CLASS"", BUNDLE,
+-                                              seiClass.getCanonicalName());
++                    Message msg = new Message(""COULD_NOT_LOAD_CLASS"", BUNDLE, api);","[{'comment': 'Should be epi and not api', 'commenter': 'deki'}, {'comment': 'I fixed it.', 'commenter': 'rosiecki'}]"
+305,rt/bindings/soap/src/main/java/org/apache/cxf/binding/soap/interceptor/SoapPreProtocolOutInterceptor.java,"@@ -19,24 +19,16 @@
+ 
+ package org.apache.cxf.binding.soap.interceptor;
+ 
+-import java.util.Collections;
+-import java.util.HashMap;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.TreeMap;
+-
+-import org.apache.cxf.binding.soap.Soap11;
+-import org.apache.cxf.binding.soap.Soap12;
+-import org.apache.cxf.binding.soap.SoapBindingConstants;
+-import org.apache.cxf.binding.soap.SoapMessage;
+-import org.apache.cxf.binding.soap.SoapVersion;
++import org.apache.cxf.binding.soap.*;","[{'comment': 'please avoid star imports', 'commenter': 'deki'}]"
+305,rt/bindings/soap/src/main/java/org/apache/cxf/binding/soap/interceptor/SoapPreProtocolOutInterceptor.java,"@@ -19,24 +19,16 @@
+ 
+ package org.apache.cxf.binding.soap.interceptor;
+ 
+-import java.util.Collections;
+-import java.util.HashMap;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.TreeMap;
+-
+-import org.apache.cxf.binding.soap.Soap11;
+-import org.apache.cxf.binding.soap.Soap12;
+-import org.apache.cxf.binding.soap.SoapBindingConstants;
+-import org.apache.cxf.binding.soap.SoapMessage;
+-import org.apache.cxf.binding.soap.SoapVersion;
++import org.apache.cxf.binding.soap.*;
+ import org.apache.cxf.binding.soap.model.SoapOperationInfo;
+ import org.apache.cxf.helpers.CastUtils;
+ import org.apache.cxf.interceptor.Fault;
+ import org.apache.cxf.message.Message;
+ import org.apache.cxf.phase.Phase;
+ import org.apache.cxf.service.model.BindingOperationInfo;
+ 
++import java.util.*;","[{'comment': 'please avoid star imports', 'commenter': 'deki'}]"
+324,tools/wsdlto/test/src/test/java/org/apache/cxf/tools/wsdlto/jaxws/CodeGenOptionTest.java,"@@ -294,6 +294,104 @@ private int countGeneratedAnnotations(String str) {
+         return count;
+     }
+ 
++    /**
++     * Tests that, when 'suppress-generated-date' option is set, javadocs
++     * won't contain the current date in all the generated java classes.
++     */
++    @Test
++    public void testSuppressGeneratedDatePresentOption() throws Exception {
++        env.put(ToolConstants.CFG_WSDLURL, getLocation(""/wsdl2java_wsdl/hello_world.wsdl""));
++        env.put(ToolConstants.CFG_SUPPRESS_GENERATED_DATE, ""true"");
++        env.put(ToolConstants.CFG_COMPILE, null);
++        env.put(ToolConstants.CFG_CLASSDIR, null);
++        processor.setContext(env);
++        processor.execute();
++
++        File dir = new File(output, ""org"");
++        assertTrue(""org directory is not found"", dir.exists());
++        dir = new File(dir, ""apache"");
++        assertTrue(""apache directory is not found"", dir.exists());
++        assertTrue(""apache directory is not found"", dir.exists());
++        dir = new File(dir, ""cxf"");
++        assertTrue(""cxf directory is not found"", dir.exists());
++        dir = new File(dir, ""w2j"");
++        assertTrue(""w2j directory is not found"", dir.exists());
++        dir = new File(dir, ""hello_world_soap_http"");
++        assertTrue(""hello_world_soap_http directory is not found"", dir.exists());
++        File types = new File(dir, ""types"");
++        assertTrue(""types directory is not found"", dir.exists());
++
++        String str = IOUtils.readStringFromStream(new FileInputStream(new File(dir, ""Greeter.java"")));
++        assertFalse(currentDatePresent(str));
++        str = IOUtils.readStringFromStream(new FileInputStream(new File(types, ""SayHi.java"")));
++        assertFalse(currentDatePresent(str));
++        str = IOUtils.readStringFromStream(new FileInputStream(new File(types, ""SayHiResponse.java"")));
++        assertFalse(currentDatePresent(str));
++    }
++
++    /**
++     * Tests that, when 'suppress-generated-date' option is not present, javadocs
++     * will contain the current date in all the generated java classes.
++     */
++    @Test
++    public void testSuppressGeneratedDateNotPresentOption() throws Exception {
++        env.put(ToolConstants.CFG_WSDLURL, getLocation(""/wsdl2java_wsdl/hello_world.wsdl""));
++        env.put(ToolConstants.CFG_MARK_GENERATED, ""true"");
++        env.put(ToolConstants.CFG_COMPILE, null);
++        env.put(ToolConstants.CFG_CLASSDIR, null);
++        processor.setContext(env);
++        processor.execute();
++
++        File dir = new File(output, ""org"");
++        assertTrue(""org directory is not found"", dir.exists());
++        dir = new File(dir, ""apache"");
++        assertTrue(""apache directory is not found"", dir.exists());
++        dir = new File(dir, ""cxf"");
++        assertTrue(""cxf directory is not found"", dir.exists());
++        dir = new File(dir, ""w2j"");
++        assertTrue(""w2j directory is not found"", dir.exists());
++        dir = new File(dir, ""hello_world_soap_http"");
++        assertTrue(""hello_world_soap_http directory is not found"", dir.exists());
++        File types = new File(dir, ""types"");
++        assertTrue(""types directory is not found"", dir.exists());
++
++        String str = IOUtils.readStringFromStream(new FileInputStream(new File(dir, ""Greeter.java"")));
++        assertTrue(currentDatePresent(str));
++        str = IOUtils.readStringFromStream(new FileInputStream(new File(types, ""SayHi.java"")));
++        assertFalse(currentDatePresent(str));
++        str = IOUtils.readStringFromStream(new FileInputStream(new File(types, ""SayHiResponse.java"")));
++        assertFalse(currentDatePresent(str));
++    }
++
++    private boolean currentDatePresent(String str) {
++        String[] lines = str.split(System.getProperty(""line.separator""));
++        boolean expectDate = false;
++
++        for (String line : lines) {
++            if (expectDate) {
++                if (line.contains(""Generated source version"")) {
++                    break;
++                } else {
++                    return true;
++                }
++            }
++            expectDate = line.contains(""This class was generated by"");
++        }
++
++        return false;
++    }
++
++    private boolean generatedAnnotationPresent(String str) {","[{'comment': 'This method is unused.', 'commenter': 'deki'}, {'comment': 'fixed, thanks', 'commenter': 'typekpb'}]"
+324,tools/wsdlto/databinding/jaxb/src/main/java/org/apache/cxf/tools/wsdlto/databinding/jaxb/JAXBDataBinding.java,"@@ -437,24 +437,20 @@ public void initialize(ToolContext c) throws ToolException {
+                 throw new ToolException(e);
+             }
+         }
+-        addSchemas(opts, schemaCompiler, schemas);
+-        addBindingFiles(opts, jaxbBindings, schemas);
+-
+ 
+-        for (String ns : context.getNamespacePackageMap().keySet()) {
+-            File file = JAXBUtils.getPackageMappingSchemaBindingFile(ns, context.mapPackageName(ns));
++        if (context.optionSet(ToolConstants.CFG_SUPPRESS_GENERATED_DATE)) {
++            // Prevents dumping current date as part of javadocs of the Java files generated.
++            // This is done by passing '-suppress-generated-date' attribute to jaxb xjc.","[{'comment': 'XJC has no such option, why should we pass it? After removing this codeblock the test still passes.', 'commenter': 'deki'}, {'comment': 'fixed, thanks', 'commenter': 'typekpb'}]"
+420,maven-plugins/codegen-plugin/pom.xml,"@@ -29,6 +29,9 @@
+         <artifactId>cxf-maven-plugins</artifactId>
+         <version>3.2.5-SNAPSHOT</version>
+     </parent>
++    <properties>
++        <cxf.module.name>org.apache.cxf.codegen.plugin</cxf.module.name>","[{'comment': 'org.apache.cxf.plugin.codegen', 'commenter': 'deki'}, {'comment': ':+1: ', 'commenter': 'reta'}]"
+420,maven-plugins/corba/pom.xml,"@@ -29,6 +29,9 @@
+         <artifactId>cxf-maven-plugins</artifactId>
+         <version>3.2.5-SNAPSHOT</version>
+     </parent>
++    <properties>
++        <cxf.module.name>org.apache.cxf.corbatools.plugin</cxf.module.name>","[{'comment': 'org.apache.cxf.plugin.corbatools', 'commenter': 'deki'}, {'comment': ':+1: ', 'commenter': 'reta'}]"
+420,maven-plugins/java2swagger-plugin/pom.xml,"@@ -33,6 +33,7 @@
+       <version>3.2.5-SNAPSHOT</version>
+     </parent>
+     <properties>
++        <cxf.module.name>org.apache.cxf.java2swagger.plugin</cxf.module.name>
+         <cxf.manifest.location />","[{'comment': 'org.apache.cxf.plugin.java2swagger', 'commenter': 'deki'}, {'comment': ':+1: ', 'commenter': 'reta'}]"
+420,maven-plugins/java2wadl-plugin/pom.xml,"@@ -34,6 +34,7 @@
+       <version>3.2.5-SNAPSHOT</version>
+     </parent>
+     <properties>
++        <cxf.module.name>org.apache.cxf.java2wadl.plugin</cxf.module.name>","[{'comment': 'org.apache.cxf.plugin.java2wadl', 'commenter': 'deki'}, {'comment': ':+1: ', 'commenter': 'reta'}]"
+420,maven-plugins/java2ws-plugin/pom.xml,"@@ -29,6 +29,9 @@
+         <artifactId>cxf-maven-plugins</artifactId>
+         <version>3.2.5-SNAPSHOT</version>
+     </parent>
++    <properties>
++        <cxf.module.name>org.apache.cxf.java2ws.plugin</cxf.module.name>","[{'comment': 'org.apache.cxf.plugin.java2ws', 'commenter': 'deki'}, {'comment': ':+1: ', 'commenter': 'reta'}]"
+420,maven-plugins/wadl2java-plugin/pom.xml,"@@ -29,6 +29,9 @@
+         <artifactId>cxf-maven-plugins</artifactId>
+         <version>3.2.5-SNAPSHOT</version>
+     </parent>
++    <properties>
++        <cxf.module.name>org.apache.cxf.wadl2java.plugin</cxf.module.name>","[{'comment': 'org.apache.cxf.plugin.wadl2java', 'commenter': 'deki'}, {'comment': ':+1: ', 'commenter': 'reta'}]"
+420,maven-plugins/wsdl-validator-plugin/pom.xml,"@@ -29,6 +29,9 @@
+         <artifactId>cxf-maven-plugins</artifactId>
+         <version>3.2.5-SNAPSHOT</version>
+     </parent>
++    <properties>
++        <cxf.module.name>org.apache.cxf.wsdl.validator.plugin</cxf.module.name>
++    </properties>","[{'comment': 'org.apache.cxf.plugin.wsdl-validator', 'commenter': 'deki'}, {'comment': 'Minus is an issue in module names so looks good IMHO', 'commenter': 'rmannibucau'}, {'comment': ':+1: ', 'commenter': 'reta'}]"
+420,maven-plugins/wsdl-validator-plugin/pom.xml,"@@ -29,6 +29,9 @@
+         <artifactId>cxf-maven-plugins</artifactId>
+         <version>3.2.5-SNAPSHOT</version>
+     </parent>
++    <properties>
++        <cxf.module.name>org.apache.cxf.plugin.wsdl-validator</cxf.module.name>","[{'comment': ""I know it was part of my proposal but while reading it again I wonder if hyphen is allowed, because for package names it's not."", 'commenter': 'deki'}, {'comment': 'It is allowed - compared to underscores or leading numbers which are not supported - but not very well integrated AFAIK in the ecosystem so avoiding it is not bad.', 'commenter': 'rmannibucau'}, {'comment': 'Sure, so `org.apache.cxf.plugin.wsdl.validator` is OK?', 'commenter': 'reta'}, {'comment': 'Yes :)', 'commenter': 'rmannibucau'}]"
+456,services/sts/systests/advanced/src/test/java/org/apache/cxf/systest/sts/kerberos/KerberosDelegationTokenTest.java,"@@ -135,6 +138,48 @@ public void testKerberosTokenJAXRS() throws Exception {
+         org.junit.Assert.assertEquals(2 * numToDouble, resp);
+     }
+ 
++    @org.junit.Test
++    public void testKerberosTokenJAXRSCustomLogin() throws Exception {","[{'comment': 'This test class is not actually run (there is a junit Ignore specified on the class). Could you instead move the test to the systests/kerberos directory? \r\n\r\nhttps://github.com/apache/cxf/tree/master/systests/kerberos/src/test/java/org/apache/cxf/systest/kerberos/jaxrs/kerberos\r\n\r\nThe test should show the need for this PR by failing before the fix was applied, and passing after.', 'commenter': 'coheigea'}]"
+456,rt/transports/http/src/main/java/org/apache/cxf/transport/http/auth/AbstractSpnegoAuthSupplier.java,"@@ -120,6 +120,10 @@ public String getAuthorization(AuthorizationPolicy authPolicy,
+                 lc.login();
+                 subject = lc.getSubject();
+             }
++        } else if (loginConfig != null) {","[{'comment': 'I think maybe we should check if delegratedCred == null here as well.', 'commenter': 'coheigea'}]"
+456,rt/transports/http/src/main/java/org/apache/cxf/transport/http/auth/AbstractSpnegoAuthSupplier.java,"@@ -120,6 +120,10 @@ public String getAuthorization(AuthorizationPolicy authPolicy,
+                 lc.login();
+                 subject = lc.getSubject();
+             }
++        } else if (loginConfig != null) {
++            LoginContext lc = new LoginContext("""", new Subject(), null, loginConfig);","[{'comment': 'Do we need ""new Subject()"" here or does null work instead?', 'commenter': 'coheigea'}]"
+462,rt/rs/security/http-signature/pom.xml,"@@ -0,0 +1,68 @@
++<?xml version=""1.0"" encoding=""UTF-8""?>
++<!--
++  Licensed to the Apache Software Foundation (ASF) under one
++  or more contributor license agreements. See the NOTICE file
++  distributed with this work for additional information
++  regarding copyright ownership. The ASF licenses this file
++  to you under the Apache License, Version 2.0 (the
++  ""License""); you may not use this file except in compliance
++  with the License. You may obtain a copy of the License at
++ 
++  http://www.apache.org/licenses/LICENSE-2.0
++ 
++  Unless required by applicable law or agreed to in writing,
++  software distributed under the License is distributed on an
++  ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++  KIND, either express or implied. See the License for the
++  specific language governing permissions and limitations
++  under the License.
++-->
++<project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
++  <modelVersion>4.0.0</modelVersion>
++  <parent>
++    <artifactId>cxf-rt-rs-security</artifactId>
++    <groupId>org.apache.cxf</groupId>
++    <version>3.3.0-SNAPSHOT</version>
++  </parent>
++
++  <description>
++    Integrate https://tools.ietf.org/html/draft-cavage-http-signatures-09 as JAX-RS filters for signing and verifying requests.
++  </description>
++
++  <artifactId>http-signature</artifactId>
++
++  <dependencies>
++    <dependency>
++      <groupId>org.tomitribe</groupId>
++      <artifactId>tomitribe-http-signatures</artifactId>
++      <version>1.1</version>
++    </dependency>
++    <dependency>
++      <groupId>org.apache.cxf</groupId>
++      <artifactId>cxf-core</artifactId>
++      <version>${project.version}</version>
++    </dependency>
++    <dependency>
++      <groupId>org.apache.cxf</groupId>
++      <artifactId>cxf-rt-security</artifactId>
++      <version>${project.version}</version>
++    </dependency>
++    <dependency>
++      <groupId>junit</groupId>
++      <artifactId>junit</artifactId>
++      <version>4.12</version>
++      <scope>test</scope>
++    </dependency>
++    <dependency>
++      <groupId>javax.ws.rs</groupId>
++      <artifactId>javax.ws.rs-api</artifactId>
++      <version>2.1</version>
++    </dependency>
++      <dependency>","[{'comment': 'use consistent formatting', 'commenter': 'davidkarlsen'}]"
+462,rt/rs/security/http-signature/pom.xml,"@@ -0,0 +1,68 @@
++<?xml version=""1.0"" encoding=""UTF-8""?>
++<!--
++  Licensed to the Apache Software Foundation (ASF) under one
++  or more contributor license agreements. See the NOTICE file
++  distributed with this work for additional information
++  regarding copyright ownership. The ASF licenses this file
++  to you under the Apache License, Version 2.0 (the
++  ""License""); you may not use this file except in compliance
++  with the License. You may obtain a copy of the License at
++ 
++  http://www.apache.org/licenses/LICENSE-2.0
++ 
++  Unless required by applicable law or agreed to in writing,
++  software distributed under the License is distributed on an
++  ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++  KIND, either express or implied. See the License for the
++  specific language governing permissions and limitations
++  under the License.
++-->
++<project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
++  <modelVersion>4.0.0</modelVersion>
++  <parent>
++    <artifactId>cxf-rt-rs-security</artifactId>
++    <groupId>org.apache.cxf</groupId>
++    <version>3.3.0-SNAPSHOT</version>
++  </parent>
++
++  <description>
++    Integrate https://tools.ietf.org/html/draft-cavage-http-signatures-09 as JAX-RS filters for signing and verifying requests.
++  </description>
++
++  <artifactId>http-signature</artifactId>
++
++  <dependencies>
++    <dependency>
++      <groupId>org.tomitribe</groupId>
++      <artifactId>tomitribe-http-signatures</artifactId>
++      <version>1.1</version>
++    </dependency>
++    <dependency>
++      <groupId>org.apache.cxf</groupId>
++      <artifactId>cxf-core</artifactId>
++      <version>${project.version}</version>
++    </dependency>
++    <dependency>
++      <groupId>org.apache.cxf</groupId>
++      <artifactId>cxf-rt-security</artifactId>
++      <version>${project.version}</version>
++    </dependency>
++    <dependency>
++      <groupId>junit</groupId>
++      <artifactId>junit</artifactId>
++      <version>4.12</version>
++      <scope>test</scope>
++    </dependency>
++    <dependency>
++      <groupId>javax.ws.rs</groupId>
++      <artifactId>javax.ws.rs-api</artifactId>
++      <version>2.1</version>","[{'comment': 'remove the version to use the managed version from the parent pom', 'commenter': 'davidkarlsen'}]"
+462,rt/rs/security/http-signature/pom.xml,"@@ -0,0 +1,68 @@
++<?xml version=""1.0"" encoding=""UTF-8""?>
++<!--
++  Licensed to the Apache Software Foundation (ASF) under one
++  or more contributor license agreements. See the NOTICE file
++  distributed with this work for additional information
++  regarding copyright ownership. The ASF licenses this file
++  to you under the Apache License, Version 2.0 (the
++  ""License""); you may not use this file except in compliance
++  with the License. You may obtain a copy of the License at
++ 
++  http://www.apache.org/licenses/LICENSE-2.0
++ 
++  Unless required by applicable law or agreed to in writing,
++  software distributed under the License is distributed on an
++  ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++  KIND, either express or implied. See the License for the
++  specific language governing permissions and limitations
++  under the License.
++-->
++<project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
++  <modelVersion>4.0.0</modelVersion>
++  <parent>
++    <artifactId>cxf-rt-rs-security</artifactId>
++    <groupId>org.apache.cxf</groupId>
++    <version>3.3.0-SNAPSHOT</version>
++  </parent>
++
++  <description>
++    Integrate https://tools.ietf.org/html/draft-cavage-http-signatures-09 as JAX-RS filters for signing and verifying requests.
++  </description>
++
++  <artifactId>http-signature</artifactId>
++
++  <dependencies>
++    <dependency>
++      <groupId>org.tomitribe</groupId>
++      <artifactId>tomitribe-http-signatures</artifactId>
++      <version>1.1</version>
++    </dependency>
++    <dependency>
++      <groupId>org.apache.cxf</groupId>
++      <artifactId>cxf-core</artifactId>
++      <version>${project.version}</version>
++    </dependency>
++    <dependency>
++      <groupId>org.apache.cxf</groupId>
++      <artifactId>cxf-rt-security</artifactId>
++      <version>${project.version}</version>
++    </dependency>
++    <dependency>
++      <groupId>junit</groupId>
++      <artifactId>junit</artifactId>
++      <version>4.12</version>","[{'comment': 'drop version to use managed version from parent-pom', 'commenter': 'davidkarlsen'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/MessageVerifier.java,"@@ -0,0 +1,212 @@
++package org.apache.cxf.rs.security.httpsignature;
++
++import org.apache.cxf.common.logging.LogUtils;
++import org.tomitribe.auth.signatures.Signature;
++import org.tomitribe.auth.signatures.Verifier;
++
++import java.nio.charset.StandardCharsets;
++import java.security.Key;
++import java.security.MessageDigest;
++import java.security.NoSuchAlgorithmException;
++import java.security.Security;
++import java.util.*;
++import java.util.logging.Logger;
++
++public class MessageVerifier {
++    private ExceptionHandler exceptionHandler;
++
++    protected static final Logger LOG = LogUtils.getL7dLogger(MessageVerifier.class);
++
++    public MessageVerifier(boolean verifyMessageBody) {
++        setExceptionHandler(null);
++        setSecurityProvider(null);
++        setAlgorithmProvider(null);
++        this.verifyMessageBody = verifyMessageBody;
++    }
++
++    public MessageVerifier(PublicKeyProvider publicKeyProvider,
++                           ExceptionHandler exceptionHandler,
++                           SecurityProvider securityProvider,
++                           AlgorithmProvider algorithmProvider,
++                           boolean verifyMessageBody)
++    {
++        Objects.requireNonNull(publicKeyProvider, ""Public key provider cannot be null"");
++        this.publicKeyProvider = publicKeyProvider;
++        this.exceptionHandler = exceptionHandler;
++        this.securityProvider = securityProvider;
++        this.algorithmProvider = algorithmProvider;
++        this.verifyMessageBody = verifyMessageBody;
++    }
++
++    private PublicKeyProvider publicKeyProvider;
++
++    private SecurityProvider securityProvider;
++
++    private AlgorithmProvider algorithmProvider;
++
++    private boolean verifyMessageBody;
++
++    public void setSecurityProvider(SecurityProvider securityProvider) {
++        if (securityProvider != null) {
++            this.securityProvider = securityProvider;
++        } else {
++            this.securityProvider = (keyId) -> Security.getProvider(""SunRsaSign"");
++        }
++    }
++
++    public void setPublicKeyProvider(PublicKeyProvider publicKeyProvider) {
++        this.publicKeyProvider = publicKeyProvider;
++    }
++
++    public void setAlgorithmProvider(AlgorithmProvider algorithmProvider) {
++        if (algorithmProvider != null) {
++            this.algorithmProvider = algorithmProvider;
++        } else {
++            this.algorithmProvider = (keyId) -> ""rsa-sha256"";
++        }
++    }
++
++    public ExceptionHandler getExceptionHandler() {
++        return exceptionHandler;
++    }
++
++    public void setExceptionHandler(ExceptionHandler exceptionHandler) {
++        if (exceptionHandler != null) {
++            this.exceptionHandler = exceptionHandler;
++        } else {
++            this.exceptionHandler = (exception, type) -> new SignatureException(""exception of type: "" + type + "" occurred"");
++        }
++    }
++
++    public void verifyMessage(Map<String, List<String>> messageHeaders, String messageBody) {
++        if (verifyMessageBody) {
++            inspectDigest(messageBody, messageHeaders);
++        }
++        verifyMessage(messageHeaders);
++    }
++
++    public void verifyMessage(Map<String, List<String>> messageHeaders) {
++        inspectIllegalState();
++
++        inspectMissingSignatureHeader(messageHeaders);
++
++        inspectMultipleSignatureHeaders(messageHeaders);
++
++        Signature signature = extractSignature(messageHeaders.get(""Signature"").get(0));
++
++        String providedAlgorithm = algorithmProvider.getAlgorithmName(signature.getKeyId());
++        Objects.requireNonNull(providedAlgorithm, ""provided algorithm is null"");
++
++        String signatureAlgorithm = signature.getAlgorithm().toString();
++        if (!providedAlgorithm.equals(signatureAlgorithm)) {
++            throw exceptionHandler.handle(new SignatureException(""algorithm from header and provided are different""),
++                    SignatureExceptionType.DIFFERENT_ALGORITHMS);
++        }
++
++        // Replace the algorithm provided by the headers with the algorithm given by the algorithm provider
++        Signature newSignature =
++                Signature.fromString(replaceAlgorithm(signature.toString(), signatureAlgorithm, providedAlgorithm));
++
++        Key key = publicKeyProvider.getKey(signature.getKeyId());
++        Objects.requireNonNull(key, ""provided public key is null"");
++
++        runVerifier(messageHeaders, key, newSignature);
++    }
++
++    private String replaceAlgorithm(String signatureString, String oldAlgorithm, String newAlgorithm) {
++        return signatureString.replaceFirst(""algorithm=\"""" + oldAlgorithm, ""algorithm=\"""" + newAlgorithm);
++    }
++
++    private void inspectIllegalState() {
++        if (publicKeyProvider == null) {
++            throw new IllegalStateException(""public key provider is not set"");
++        }
++        if (securityProvider == null) {
++            throw new IllegalStateException(""security provider is not set"");
++        }
++        if (algorithmProvider == null) {
++            throw new IllegalStateException(""algorithm provider is not set"");
++        }
++    }
++
++    private void inspectDigest(String messageBody, Map<String, List<String>> responseHeaders) {
++        LOG.info(""Starting digest verification"");","[{'comment': 'reduce verbosity to debug', 'commenter': 'davidkarlsen'}]"
+462,rt/rs/security/http-signature/pom.xml,"@@ -0,0 +1,73 @@
++<?xml version=""1.0"" encoding=""UTF-8""?>
++<!--
++  Licensed to the Apache Software Foundation (ASF) under one
++  or more contributor license agreements. See the NOTICE file
++  distributed with this work for additional information
++  regarding copyright ownership. The ASF licenses this file
++  to you under the Apache License, Version 2.0 (the
++  ""License""); you may not use this file except in compliance
++  with the License. You may obtain a copy of the License at
++ 
++  http://www.apache.org/licenses/LICENSE-2.0
++ 
++  Unless required by applicable law or agreed to in writing,
++  software distributed under the License is distributed on an
++  ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++  KIND, either express or implied. See the License for the
++  specific language governing permissions and limitations
++  under the License.
++-->
++<project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
++         xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
++    <modelVersion>4.0.0</modelVersion>
++    <packaging>bundle</packaging>
++    <name>Apache CXF Runtime JOSE Core</name>
++    <description>
++        Integrate https://tools.ietf.org/html/draft-cavage-http-signatures-09 as JAX-RS filters for signing and
++        verifying requests.
++    </description>
++    <url>http://cxf.apache.org</url>
++    <parent>
++        <groupId>org.apache.cxf</groupId>
++        <artifactId>cxf-parent</artifactId>
++        <version>3.3.0-SNAPSHOT</version>
++        <relativePath>../../../../parent/pom.xml</relativePath>
++    </parent>
++
++    <artifactId>http-signature</artifactId>
++","[{'comment': 'Could you please add \r\n```\r\n    <properties>\r\n        <cxf.module.name>org.apache.cxf.rs.security.http.signature</cxf.module.name>\r\n    </properties>\r\n```\r\nThis is automatic module name for Java 9+, thank you.', 'commenter': 'reta'}]"
+462,rt/rs/security/http-signature/pom.xml,"@@ -0,0 +1,73 @@
++<?xml version=""1.0"" encoding=""UTF-8""?>
++<!--
++  Licensed to the Apache Software Foundation (ASF) under one
++  or more contributor license agreements. See the NOTICE file
++  distributed with this work for additional information
++  regarding copyright ownership. The ASF licenses this file
++  to you under the Apache License, Version 2.0 (the
++  ""License""); you may not use this file except in compliance
++  with the License. You may obtain a copy of the License at
++ 
++  http://www.apache.org/licenses/LICENSE-2.0
++ 
++  Unless required by applicable law or agreed to in writing,
++  software distributed under the License is distributed on an
++  ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++  KIND, either express or implied. See the License for the
++  specific language governing permissions and limitations
++  under the License.
++-->
++<project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
++         xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
++    <modelVersion>4.0.0</modelVersion>
++    <packaging>bundle</packaging>
++    <name>Apache CXF Runtime JOSE Core</name>
++    <description>
++        Integrate https://tools.ietf.org/html/draft-cavage-http-signatures-09 as JAX-RS filters for signing and
++        verifying requests.
++    </description>
++    <url>http://cxf.apache.org</url>
++    <parent>
++        <groupId>org.apache.cxf</groupId>
++        <artifactId>cxf-parent</artifactId>
++        <version>3.3.0-SNAPSHOT</version>
++        <relativePath>../../../../parent/pom.xml</relativePath>
++    </parent>
++
++    <artifactId>http-signature</artifactId>
++
++    <dependencies>
++        <dependency>
++            <groupId>org.tomitribe</groupId>
++            <artifactId>tomitribe-http-signatures</artifactId>
++            <version>1.1</version>","[{'comment': 'We may better externalize version in the `parent/pom.xml`, like f.e. `${tomitribe.http.signatures.version}`, it could be helpful for bundling OSGi features.', 'commenter': 'reta'}]"
+462,rt/rs/security/http-signature/pom.xml,"@@ -0,0 +1,73 @@
++<?xml version=""1.0"" encoding=""UTF-8""?>
++<!--
++  Licensed to the Apache Software Foundation (ASF) under one
++  or more contributor license agreements. See the NOTICE file
++  distributed with this work for additional information
++  regarding copyright ownership. The ASF licenses this file
++  to you under the Apache License, Version 2.0 (the
++  ""License""); you may not use this file except in compliance
++  with the License. You may obtain a copy of the License at
++ 
++  http://www.apache.org/licenses/LICENSE-2.0
++ 
++  Unless required by applicable law or agreed to in writing,
++  software distributed under the License is distributed on an
++  ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++  KIND, either express or implied. See the License for the
++  specific language governing permissions and limitations
++  under the License.
++-->
++<project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
++         xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
++    <modelVersion>4.0.0</modelVersion>
++    <packaging>bundle</packaging>
++    <name>Apache CXF Runtime JOSE Core</name>
++    <description>
++        Integrate https://tools.ietf.org/html/draft-cavage-http-signatures-09 as JAX-RS filters for signing and
++        verifying requests.
++    </description>
++    <url>http://cxf.apache.org</url>
++    <parent>
++        <groupId>org.apache.cxf</groupId>
++        <artifactId>cxf-parent</artifactId>
++        <version>3.3.0-SNAPSHOT</version>
++        <relativePath>../../../../parent/pom.xml</relativePath>
++    </parent>
++
++    <artifactId>http-signature</artifactId>
++
++    <dependencies>
++        <dependency>
++            <groupId>org.tomitribe</groupId>
++            <artifactId>tomitribe-http-signatures</artifactId>
++            <version>1.1</version>
++        </dependency>
++        <dependency>
++            <groupId>org.apache.cxf</groupId>
++            <artifactId>cxf-core</artifactId>
++            <version>${project.version}</version>","[{'comment': 'I think `${project.version}` is not necessary anymore, should come from `cxf-parent`', 'commenter': 'reta'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/AlgorithmProvider.java,"@@ -0,0 +1,12 @@
++package org.apache.cxf.rs.security.httpsignature;
++
++@FunctionalInterface
++public interface AlgorithmProvider {
++
++    /**
++     *
++     * @param keyId
++     * @return the algorithm name (which is never {@code null})
++     */
++    String getAlgorithmName(String keyId);","[{'comment': 'May be `Optional<String>` since `null` is not really useful?', 'commenter': 'reta'}, {'comment': ""> May be `Optional<String>` since `null` is not really useful?\r\n\r\nOptional even though it's never supposed to be `null`?"", 'commenter': 'peterjohansen'}, {'comment': 'Hm ... The usage of this method in this PR implies it could be `null`, the example from the `MessageVerifier` class:\r\n\r\n```\r\nString providedAlgorithm = algorithmProvider.getAlgorithmName(signature.getKeyId());\r\nObjects.requireNonNull(providedAlgorithm, ""provided algorithm is null"");\r\n```\r\n\r\nIf it cannot be null, we could add `javadoc` with the exception description to throw and remove such `null` checks since they are not relevant. What do you think?', 'commenter': 'reta'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/MessageVerifier.java,"@@ -0,0 +1,212 @@
++package org.apache.cxf.rs.security.httpsignature;
++
++import org.apache.cxf.common.logging.LogUtils;
++import org.tomitribe.auth.signatures.Signature;
++import org.tomitribe.auth.signatures.Verifier;
++
++import java.nio.charset.StandardCharsets;
++import java.security.Key;
++import java.security.MessageDigest;
++import java.security.NoSuchAlgorithmException;
++import java.security.Security;
++import java.util.*;
++import java.util.logging.Logger;
++
++public class MessageVerifier {
++    private ExceptionHandler exceptionHandler;
++
++    private static final Logger LOG = LogUtils.getL7dLogger(MessageVerifier.class);
++
++    public MessageVerifier(boolean verifyMessageBody) {
++        setExceptionHandler(null);","[{'comment': 'This `setXxx` are not necessary, `null` is the default value, right?', 'commenter': 'reta'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/MessageSigner.java,"@@ -0,0 +1,74 @@
++package org.apache.cxf.rs.security.httpsignature;
++
++import org.tomitribe.auth.signatures.Signature;
++
++import java.io.IOException;
++import java.security.NoSuchAlgorithmException;
++import java.security.PrivateKey;
++import java.util.Collections;
++import java.util.List;
++import java.util.Map;
++
++public class MessageSigner {
++    private final String digestAlgorithmName;
++    private final String signatureAlgorithmName;
++
++    /**
++     * Message signer using standard digest and signing algorithm
++     */
++    public MessageSigner() {
++        this(""rsa-sha256"", ""SHA-256"");","[{'comment': 'Should `rsa-sha256` and `SHA-256` be encapsulated as constants? I see some of them several times in the code.', 'commenter': 'reta'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/MessageVerifier.java,"@@ -0,0 +1,212 @@
++package org.apache.cxf.rs.security.httpsignature;
++
++import org.apache.cxf.common.logging.LogUtils;
++import org.tomitribe.auth.signatures.Signature;
++import org.tomitribe.auth.signatures.Verifier;
++
++import java.nio.charset.StandardCharsets;
++import java.security.Key;
++import java.security.MessageDigest;
++import java.security.NoSuchAlgorithmException;
++import java.security.Security;
++import java.util.*;
++import java.util.logging.Logger;
++
++public class MessageVerifier {
++    private ExceptionHandler exceptionHandler;
++
++    private static final Logger LOG = LogUtils.getL7dLogger(MessageVerifier.class);
++
++    public MessageVerifier(boolean verifyMessageBody) {
++        setExceptionHandler(null);
++        setSecurityProvider(null);
++        setAlgorithmProvider(null);
++        this.verifyMessageBody = verifyMessageBody;
++    }
++
++    public MessageVerifier(PublicKeyProvider publicKeyProvider,
++                           ExceptionHandler exceptionHandler,
++                           SecurityProvider securityProvider,
++                           AlgorithmProvider algorithmProvider,
++                           boolean verifyMessageBody)
++    {
++        Objects.requireNonNull(publicKeyProvider, ""Public key provider cannot be null"");
++        this.publicKeyProvider = publicKeyProvider;
++        this.exceptionHandler = exceptionHandler;
++        this.securityProvider = securityProvider;
++        this.algorithmProvider = algorithmProvider;
++        this.verifyMessageBody = verifyMessageBody;
++    }
++
++    private PublicKeyProvider publicKeyProvider;
++
++    private SecurityProvider securityProvider;
++
++    private AlgorithmProvider algorithmProvider;
++
++    private boolean verifyMessageBody;
++
++    public void setSecurityProvider(SecurityProvider securityProvider) {
++        if (securityProvider != null) {
++            this.securityProvider = securityProvider;
++        } else {
++            this.securityProvider = (keyId) -> Security.getProvider(""SunRsaSign"");","[{'comment': 'Should me make it default and use `Objects.requireNonNull`? The logic of the setter is a bit unexpected', 'commenter': 'reta'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/MessageVerifier.java,"@@ -0,0 +1,212 @@
++package org.apache.cxf.rs.security.httpsignature;
++
++import org.apache.cxf.common.logging.LogUtils;
++import org.tomitribe.auth.signatures.Signature;
++import org.tomitribe.auth.signatures.Verifier;
++
++import java.nio.charset.StandardCharsets;
++import java.security.Key;
++import java.security.MessageDigest;
++import java.security.NoSuchAlgorithmException;
++import java.security.Security;
++import java.util.*;
++import java.util.logging.Logger;
++
++public class MessageVerifier {
++    private ExceptionHandler exceptionHandler;
++
++    private static final Logger LOG = LogUtils.getL7dLogger(MessageVerifier.class);
++
++    public MessageVerifier(boolean verifyMessageBody) {
++        setExceptionHandler(null);
++        setSecurityProvider(null);
++        setAlgorithmProvider(null);
++        this.verifyMessageBody = verifyMessageBody;
++    }
++
++    public MessageVerifier(PublicKeyProvider publicKeyProvider,
++                           ExceptionHandler exceptionHandler,
++                           SecurityProvider securityProvider,
++                           AlgorithmProvider algorithmProvider,
++                           boolean verifyMessageBody)
++    {
++        Objects.requireNonNull(publicKeyProvider, ""Public key provider cannot be null"");
++        this.publicKeyProvider = publicKeyProvider;
++        this.exceptionHandler = exceptionHandler;
++        this.securityProvider = securityProvider;
++        this.algorithmProvider = algorithmProvider;
++        this.verifyMessageBody = verifyMessageBody;
++    }
++
++    private PublicKeyProvider publicKeyProvider;
++
++    private SecurityProvider securityProvider;
++
++    private AlgorithmProvider algorithmProvider;
++
++    private boolean verifyMessageBody;
++
++    public void setSecurityProvider(SecurityProvider securityProvider) {
++        if (securityProvider != null) {
++            this.securityProvider = securityProvider;
++        } else {
++            this.securityProvider = (keyId) -> Security.getProvider(""SunRsaSign"");
++        }
++    }
++
++    public void setPublicKeyProvider(PublicKeyProvider publicKeyProvider) {
++        this.publicKeyProvider = publicKeyProvider;
++    }
++
++    public void setAlgorithmProvider(AlgorithmProvider algorithmProvider) {
++        if (algorithmProvider != null) {
++            this.algorithmProvider = algorithmProvider;
++        } else {
++            this.algorithmProvider = (keyId) -> ""rsa-sha256"";
++        }
++    }
++
++    public ExceptionHandler getExceptionHandler() {
++        return exceptionHandler;
++    }
++
++    public void setExceptionHandler(ExceptionHandler exceptionHandler) {
++        if (exceptionHandler != null) {
++            this.exceptionHandler = exceptionHandler;
++        } else {
++            this.exceptionHandler = (exception, type) -> new SignatureException(""exception of type: "" + type + "" occurred"");
++        }
++    }
++
++    public void verifyMessage(Map<String, List<String>> messageHeaders, String messageBody) {
++        if (verifyMessageBody) {
++            inspectDigest(messageBody, messageHeaders);
++        }
++        verifyMessage(messageHeaders);
++    }
++
++    public void verifyMessage(Map<String, List<String>> messageHeaders) {
++        inspectIllegalState();
++
++        inspectMissingSignatureHeader(messageHeaders);
++
++        inspectMultipleSignatureHeaders(messageHeaders);
++
++        Signature signature = extractSignature(messageHeaders.get(""Signature"").get(0));","[{'comment': 'Move `Signature` and other headers into `HttpSignatureHeaders` class?', 'commenter': 'reta'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/MessageVerifier.java,"@@ -0,0 +1,212 @@
++package org.apache.cxf.rs.security.httpsignature;
++
++import org.apache.cxf.common.logging.LogUtils;
++import org.tomitribe.auth.signatures.Signature;
++import org.tomitribe.auth.signatures.Verifier;
++
++import java.nio.charset.StandardCharsets;
++import java.security.Key;
++import java.security.MessageDigest;
++import java.security.NoSuchAlgorithmException;
++import java.security.Security;
++import java.util.*;
++import java.util.logging.Logger;
++
++public class MessageVerifier {
++    private ExceptionHandler exceptionHandler;
++
++    private static final Logger LOG = LogUtils.getL7dLogger(MessageVerifier.class);
++
++    public MessageVerifier(boolean verifyMessageBody) {
++        setExceptionHandler(null);
++        setSecurityProvider(null);
++        setAlgorithmProvider(null);
++        this.verifyMessageBody = verifyMessageBody;
++    }
++
++    public MessageVerifier(PublicKeyProvider publicKeyProvider,
++                           ExceptionHandler exceptionHandler,
++                           SecurityProvider securityProvider,
++                           AlgorithmProvider algorithmProvider,
++                           boolean verifyMessageBody)
++    {
++        Objects.requireNonNull(publicKeyProvider, ""Public key provider cannot be null"");
++        this.publicKeyProvider = publicKeyProvider;
++        this.exceptionHandler = exceptionHandler;
++        this.securityProvider = securityProvider;
++        this.algorithmProvider = algorithmProvider;
++        this.verifyMessageBody = verifyMessageBody;
++    }
++
++    private PublicKeyProvider publicKeyProvider;
++
++    private SecurityProvider securityProvider;
++
++    private AlgorithmProvider algorithmProvider;
++
++    private boolean verifyMessageBody;
++
++    public void setSecurityProvider(SecurityProvider securityProvider) {
++        if (securityProvider != null) {
++            this.securityProvider = securityProvider;
++        } else {
++            this.securityProvider = (keyId) -> Security.getProvider(""SunRsaSign"");
++        }
++    }
++
++    public void setPublicKeyProvider(PublicKeyProvider publicKeyProvider) {
++        this.publicKeyProvider = publicKeyProvider;
++    }
++
++    public void setAlgorithmProvider(AlgorithmProvider algorithmProvider) {
++        if (algorithmProvider != null) {
++            this.algorithmProvider = algorithmProvider;
++        } else {
++            this.algorithmProvider = (keyId) -> ""rsa-sha256"";
++        }
++    }
++
++    public ExceptionHandler getExceptionHandler() {
++        return exceptionHandler;
++    }
++
++    public void setExceptionHandler(ExceptionHandler exceptionHandler) {
++        if (exceptionHandler != null) {
++            this.exceptionHandler = exceptionHandler;
++        } else {
++            this.exceptionHandler = (exception, type) -> new SignatureException(""exception of type: "" + type + "" occurred"");
++        }
++    }
++
++    public void verifyMessage(Map<String, List<String>> messageHeaders, String messageBody) {
++        if (verifyMessageBody) {
++            inspectDigest(messageBody, messageHeaders);
++        }
++        verifyMessage(messageHeaders);
++    }
++
++    public void verifyMessage(Map<String, List<String>> messageHeaders) {
++        inspectIllegalState();
++
++        inspectMissingSignatureHeader(messageHeaders);
++
++        inspectMultipleSignatureHeaders(messageHeaders);
++
++        Signature signature = extractSignature(messageHeaders.get(""Signature"").get(0));
++
++        String providedAlgorithm = algorithmProvider.getAlgorithmName(signature.getKeyId());
++        Objects.requireNonNull(providedAlgorithm, ""provided algorithm is null"");
++
++        String signatureAlgorithm = signature.getAlgorithm().toString();
++        if (!providedAlgorithm.equals(signatureAlgorithm)) {
++            throw exceptionHandler.handle(new SignatureException(""algorithm from header and provided are different""),
++                    SignatureExceptionType.DIFFERENT_ALGORITHMS);
++        }
++
++        // Replace the algorithm provided by the headers with the algorithm given by the algorithm provider
++        Signature newSignature =","[{'comment': 'This is a bit hacky (I think), may be better:\r\n```\r\nSignature newSignature =new Signature(signature.getKeyId(), providedAlgorithm, signature.getSignature(), signature.getHeaders());\r\n```\r\n?', 'commenter': 'reta'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/PublicKeyProvider.java,"@@ -0,0 +1,16 @@
++package org.apache.cxf.rs.security.httpsignature;
++
++import java.security.PublicKey;
++
++@FunctionalInterface
++public interface PublicKeyProvider {
++
++    /**
++     *
++     * @param keyId
++     * @return the public key (which is never {@code null})
++     * @throws NullPointerException if the provided key ID is {@code null}
++     */
++    PublicKey getKey(String keyId);","[{'comment': '`Optional<PublicKey>`?', 'commenter': 'reta'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/SecurityProvider.java,"@@ -0,0 +1,15 @@
++package org.apache.cxf.rs.security.httpsignature;
++
++import java.security.Provider;
++
++@FunctionalInterface
++public interface SecurityProvider {
++
++    /**
++     *
++     * @param keyId
++     * @return the security provider (which is never {@code null})
++     * @throws NullPointerException if the provided key ID is {@code null}
++     */
++    Provider getProvider(String keyId);","[{'comment': '`Optional<Provider>`?', 'commenter': 'reta'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/MessageVerifier.java,"@@ -0,0 +1,212 @@
++package org.apache.cxf.rs.security.httpsignature;
++
++import org.apache.cxf.common.logging.LogUtils;
++import org.tomitribe.auth.signatures.Signature;
++import org.tomitribe.auth.signatures.Verifier;
++
++import java.nio.charset.StandardCharsets;
++import java.security.Key;
++import java.security.MessageDigest;
++import java.security.NoSuchAlgorithmException;
++import java.security.Security;
++import java.util.*;
++import java.util.logging.Logger;
++
++public class MessageVerifier {
++    private ExceptionHandler exceptionHandler;
++
++    private static final Logger LOG = LogUtils.getL7dLogger(MessageVerifier.class);
++
++    public MessageVerifier(boolean verifyMessageBody) {
++        setExceptionHandler(null);
++        setSecurityProvider(null);
++        setAlgorithmProvider(null);
++        this.verifyMessageBody = verifyMessageBody;
++    }
++
++    public MessageVerifier(PublicKeyProvider publicKeyProvider,
++                           ExceptionHandler exceptionHandler,
++                           SecurityProvider securityProvider,
++                           AlgorithmProvider algorithmProvider,
++                           boolean verifyMessageBody)
++    {
++        Objects.requireNonNull(publicKeyProvider, ""Public key provider cannot be null"");
++        this.publicKeyProvider = publicKeyProvider;
++        this.exceptionHandler = exceptionHandler;
++        this.securityProvider = securityProvider;
++        this.algorithmProvider = algorithmProvider;
++        this.verifyMessageBody = verifyMessageBody;
++    }
++
++    private PublicKeyProvider publicKeyProvider;","[{'comment': 'Minor, could you please move all class fields before constructors? Thank you.', 'commenter': 'reta'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/VerifySignatureReaderInterceptor.java,"@@ -0,0 +1,85 @@
++package org.apache.cxf.rs.security.httpsignature;
++
++import org.apache.cxf.common.logging.LogUtils;
++
++import javax.annotation.Priority;
++import javax.ws.rs.Priorities;
++import javax.ws.rs.WebApplicationException;
++import javax.ws.rs.ext.Provider;
++import javax.ws.rs.ext.ReaderInterceptor;
++import javax.ws.rs.ext.ReaderInterceptorContext;
++import java.io.ByteArrayInputStream;
++import java.io.IOException;
++import java.io.InputStream;
++import java.nio.charset.StandardCharsets;
++import java.util.*;
++import java.util.logging.Logger;
++
++/**
++ * RS CXF Reader Interceptor which extracts signature data from the message and sends it to the message verifier
++ *
++ */
++@Provider
++@Priority(Priorities.AUTHENTICATION)
++public class VerifySignatureReaderInterceptor implements ReaderInterceptor {
++    private static final Logger LOG = LogUtils.getL7dLogger(VerifySignatureReaderInterceptor.class);
++
++    private MessageVerifier messageVerifier;
++
++    private boolean enabled;
++
++    public VerifySignatureReaderInterceptor() {
++        setEnabled(true);
++        setMessageVerifier(new MessageVerifier(true));
++    }
++
++    @Override
++    public Object aroundReadFrom(ReaderInterceptorContext context) throws IOException, WebApplicationException {
++        if (!enabled) {
++            LOG.fine(""Verify signature reader interceptor is disabled"");
++            return context.proceed();
++        }
++        LOG.fine(""Starting interceptor message verification process"");
++
++        Map<String, List<String>> responseHeaders = context.getHeaders();
++
++        String messageBody = extractMessageBody(context);","[{'comment': 'Could be an issue for streaming use cases (when message body is large), no?', 'commenter': 'reta'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/SignatureException.java,"@@ -0,0 +1,7 @@
++package org.apache.cxf.rs.security.httpsignature;
++
++public class SignatureException extends RuntimeException {
++    public SignatureException(String message) {","[{'comment': 'You may need default constructor `public SignatureException()` since `RuntimeException` is serializable.', 'commenter': 'reta'}]"
+462,systests/rs-security/src/test/java/org/apache/cxf/systest/jaxrs/security/httpsignature/HttpSignatureFilter.java,"@@ -0,0 +1,4 @@
++package org.apache.cxf.systest.jaxrs.security.httpsignature;
++
++public class HttpSignatureFilter {","[{'comment': 'What this class if for?', 'commenter': 'reta'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/MessageVerifier.java,"@@ -0,0 +1,242 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements. See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership. The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License. You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied. See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.cxf.rs.security.httpsignature;
++
++import java.nio.charset.StandardCharsets;
++import java.security.Key;
++import java.security.MessageDigest;
++import java.security.NoSuchAlgorithmException;
++import java.security.Security;
++import java.util.*;
++import java.util.logging.Logger;
++
++import org.apache.cxf.common.logging.LogUtils;
++import org.tomitribe.auth.signatures.Signature;
++import org.tomitribe.auth.signatures.Verifier;
++
++
++public class MessageVerifier {
++    private static final Logger LOG = LogUtils.getL7dLogger(MessageVerifier.class);
++
++    private AlgorithmProvider algorithmProvider;
++    private ExceptionHandler exceptionHandler;
++    private PublicKeyProvider publicKeyProvider;
++    private SecurityProvider securityProvider;
++
++    private boolean verifyMessageBody;
++
++    public MessageVerifier(boolean verifyMessageBody) {
++        this.exceptionHandler = (exception, type) -> new SignatureException(""exception of type: "" + type + "" occurred"");
++        this.securityProvider = keyId -> Security.getProvider(""SunRsaSign"");
++        this.algorithmProvider = keyId -> DefaultSignatureConstants.SIGNING_ALGORITHM;
++        this.verifyMessageBody = verifyMessageBody;
++    }
++
++    public MessageVerifier(PublicKeyProvider publicKeyProvider,
++                           ExceptionHandler exceptionHandler,
++                           SecurityProvider securityProvider,
++                           AlgorithmProvider algorithmProvider,
++                           boolean verifyMessageBody) {
++        Objects.requireNonNull(publicKeyProvider, ""Public key provider cannot be null"");","[{'comment': 'You probably meant `Objects.requireNonNull` for each argument, not only for `publicKeyProvider`, right?', 'commenter': 'reta'}]"
+462,rt/rs/security/http-signature/pom.xml,"@@ -0,0 +1,74 @@
++<?xml version=""1.0"" encoding=""UTF-8""?>
++<!--
++  Licensed to the Apache Software Foundation (ASF) under one
++  or more contributor license agreements. See the NOTICE file
++  distributed with this work for additional information
++  regarding copyright ownership. The ASF licenses this file
++  to you under the Apache License, Version 2.0 (the
++  ""License""); you may not use this file except in compliance
++  with the License. You may obtain a copy of the License at
++ 
++  http://www.apache.org/licenses/LICENSE-2.0
++ 
++  Unless required by applicable law or agreed to in writing,
++  software distributed under the License is distributed on an
++  ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++  KIND, either express or implied. See the License for the
++  specific language governing permissions and limitations
++  under the License.
++-->
++<project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
++         xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
++    <modelVersion>4.0.0</modelVersion>
++    <packaging>bundle</packaging>
++    <name>Apache CXF Runtime JOSE Core</name>","[{'comment': 'Please fix the name, seems to be copy/paste', 'commenter': 'deki'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/VerifySignatureReaderInterceptor.java,"@@ -0,0 +1,107 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements. See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership. The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License. You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied. See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.cxf.rs.security.httpsignature;
++
++import java.io.ByteArrayInputStream;
++import java.io.IOException;
++import java.io.InputStream;
++import java.nio.charset.StandardCharsets;
++import java.util.List;
++import java.util.Map;
++import java.util.Objects;
++import java.util.Scanner;
++import java.util.logging.Logger;
++
++import javax.annotation.Priority;
++import javax.ws.rs.Priorities;
++import javax.ws.rs.WebApplicationException;
++import javax.ws.rs.ext.Provider;
++import javax.ws.rs.ext.ReaderInterceptor;
++import javax.ws.rs.ext.ReaderInterceptorContext;
++
++import org.apache.cxf.common.logging.LogUtils;
++
++
++/**
++ * RS CXF Reader Interceptor which extracts signature data from the message and sends it to the message verifier
++ */
++@Provider
++@Priority(Priorities.AUTHENTICATION)
++public final class VerifySignatureReaderInterceptor implements ReaderInterceptor {
++    private static final Logger LOG = LogUtils.getL7dLogger(VerifySignatureReaderInterceptor.class);
++
++    private MessageVerifier messageVerifier;
++
++    private boolean enabled;
++
++    public VerifySignatureReaderInterceptor() {
++        setEnabled(true);
++        setMessageVerifier(new MessageVerifier(true));
++    }
++
++    @Override
++    public Object aroundReadFrom(ReaderInterceptorContext context) throws IOException, WebApplicationException {
++        if (!enabled) {
++            LOG.fine(""Verify signature reader interceptor is disabled"");
++            return context.proceed();
++        }
++        LOG.fine(""Starting interceptor message verification process"");
++
++        Map<String, List<String>> responseHeaders = context.getHeaders();
++
++        String messageBody = extractMessageBody(context);","[{'comment': 'maybe use bytes since string will not support all bodies and nothing in the algorithm requires this conversion (byte[] is ok worse case, InputStream with a piping algo is likely better, idea being to pass a stream verifying the digest when the body is read by the messagebodyreader if not a GET or HEAD where the payload must be read upfront)', 'commenter': 'rmannibucau'}]"
+462,rt/rs/security/http-signature/pom.xml,"@@ -0,0 +1,74 @@
++<?xml version=""1.0"" encoding=""UTF-8""?>
++<!--
++  Licensed to the Apache Software Foundation (ASF) under one
++  or more contributor license agreements. See the NOTICE file
++  distributed with this work for additional information
++  regarding copyright ownership. The ASF licenses this file
++  to you under the Apache License, Version 2.0 (the
++  ""License""); you may not use this file except in compliance
++  with the License. You may obtain a copy of the License at
++ 
++  http://www.apache.org/licenses/LICENSE-2.0
++ 
++  Unless required by applicable law or agreed to in writing,
++  software distributed under the License is distributed on an
++  ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++  KIND, either express or implied. See the License for the
++  specific language governing permissions and limitations
++  under the License.
++-->
++<project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
++         xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
++    <modelVersion>4.0.0</modelVersion>
++    <packaging>bundle</packaging>
++    <name>Apache CXF Runtime JOSE Core</name>
++    <description>
++        Integrate https://tools.ietf.org/html/draft-cavage-http-signatures-09 as JAX-RS filters for signing and
++        verifying requests.
++    </description>
++    <url>http://cxf.apache.org</url>
++    <parent>
++        <groupId>org.apache.cxf</groupId>
++        <artifactId>cxf-parent</artifactId>
++        <version>3.3.0-SNAPSHOT</version>
++        <relativePath>../../../../parent/pom.xml</relativePath>
++    </parent>
++
++    <artifactId>http-signature</artifactId>","[{'comment': 'Please rename to CXF standard, e.g. cxf-rt-rs-security-http-signature', 'commenter': 'coheigea'}]"
+462,rt/rs/security/http-signature/pom.xml,"@@ -0,0 +1,74 @@
++<?xml version=""1.0"" encoding=""UTF-8""?>
++<!--
++  Licensed to the Apache Software Foundation (ASF) under one
++  or more contributor license agreements. See the NOTICE file
++  distributed with this work for additional information
++  regarding copyright ownership. The ASF licenses this file
++  to you under the Apache License, Version 2.0 (the
++  ""License""); you may not use this file except in compliance
++  with the License. You may obtain a copy of the License at
++ 
++  http://www.apache.org/licenses/LICENSE-2.0
++ 
++  Unless required by applicable law or agreed to in writing,
++  software distributed under the License is distributed on an
++  ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++  KIND, either express or implied. See the License for the
++  specific language governing permissions and limitations
++  under the License.
++-->
++<project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
++         xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
++    <modelVersion>4.0.0</modelVersion>
++    <packaging>bundle</packaging>
++    <name>Apache CXF Runtime JOSE Core</name>
++    <description>
++        Integrate https://tools.ietf.org/html/draft-cavage-http-signatures-09 as JAX-RS filters for signing and
++        verifying requests.
++    </description>
++    <url>http://cxf.apache.org</url>
++    <parent>
++        <groupId>org.apache.cxf</groupId>
++        <artifactId>cxf-parent</artifactId>
++        <version>3.3.0-SNAPSHOT</version>
++        <relativePath>../../../../parent/pom.xml</relativePath>
++    </parent>
++
++    <artifactId>http-signature</artifactId>
++    <properties>
++        <cxf.module.name>org.apache.cxf.rs.security.http.signature</cxf.module.name>
++    </properties>
++
++    <dependencies>
++        <dependency>
++            <groupId>org.tomitribe</groupId>
++            <artifactId>tomitribe-http-signatures</artifactId>
++            <version>${cxf.tomitribe.http.signature.version}</version>","[{'comment': ""I can't see any license information available here: https://github.com/tomitribe/http-signatures-java"", 'commenter': 'coheigea'}]"
+462,rt/rs/security/http-signature/pom.xml,"@@ -0,0 +1,74 @@
++<?xml version=""1.0"" encoding=""UTF-8""?>
++<!--
++  Licensed to the Apache Software Foundation (ASF) under one
++  or more contributor license agreements. See the NOTICE file
++  distributed with this work for additional information
++  regarding copyright ownership. The ASF licenses this file
++  to you under the Apache License, Version 2.0 (the
++  ""License""); you may not use this file except in compliance
++  with the License. You may obtain a copy of the License at
++ 
++  http://www.apache.org/licenses/LICENSE-2.0
++ 
++  Unless required by applicable law or agreed to in writing,
++  software distributed under the License is distributed on an
++  ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++  KIND, either express or implied. See the License for the
++  specific language governing permissions and limitations
++  under the License.
++-->
++<project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
++         xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
++    <modelVersion>4.0.0</modelVersion>
++    <packaging>bundle</packaging>
++    <name>Apache CXF Runtime JOSE Core</name>
++    <description>
++        Integrate https://tools.ietf.org/html/draft-cavage-http-signatures-09 as JAX-RS filters for signing and
++        verifying requests.
++    </description>
++    <url>http://cxf.apache.org</url>
++    <parent>
++        <groupId>org.apache.cxf</groupId>
++        <artifactId>cxf-parent</artifactId>
++        <version>3.3.0-SNAPSHOT</version>
++        <relativePath>../../../../parent/pom.xml</relativePath>
++    </parent>
++
++    <artifactId>http-signature</artifactId>
++    <properties>
++        <cxf.module.name>org.apache.cxf.rs.security.http.signature</cxf.module.name>
++    </properties>
++
++    <dependencies>
++        <dependency>
++            <groupId>org.tomitribe</groupId>
++            <artifactId>tomitribe-http-signatures</artifactId>
++            <version>${cxf.tomitribe.http.signature.version}</version>
++        </dependency>
++        <dependency>
++            <groupId>org.apache.cxf</groupId>
++            <artifactId>cxf-core</artifactId>
++        </dependency>
++        <dependency>
++            <groupId>org.apache.cxf</groupId>
++            <artifactId>cxf-rt-security</artifactId>
++        </dependency>
++        <dependency>
++            <groupId>junit</groupId>
++            <artifactId>junit</artifactId>
++            <version>${cxf.junit.version}</version>
++            <scope>test</scope>
++        </dependency>
++        <dependency>
++            <groupId>javax.ws.rs</groupId>","[{'comment': 'Change this to:\r\n\r\n<groupId>jakarta.ws.rs</groupId>\r\n<artifactId>jakarta.ws.rs-api</artifactId>', 'commenter': 'coheigea'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/MessageVerifier.java,"@@ -0,0 +1,245 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements. See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership. The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License. You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied. See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.cxf.rs.security.httpsignature;
++
++import java.nio.charset.StandardCharsets;
++import java.security.Key;
++import java.security.MessageDigest;
++import java.security.NoSuchAlgorithmException;
++import java.security.Security;
++import java.util.*;
++import java.util.logging.Logger;
++
++import org.apache.cxf.common.logging.LogUtils;
++import org.tomitribe.auth.signatures.Signature;
++import org.tomitribe.auth.signatures.Verifier;
++
++
++public class MessageVerifier {
++    private static final Logger LOG = LogUtils.getL7dLogger(MessageVerifier.class);
++
++    private AlgorithmProvider algorithmProvider;
++    private ExceptionHandler exceptionHandler;
++    private PublicKeyProvider publicKeyProvider;
++    private SecurityProvider securityProvider;
++
++    private boolean verifyMessageBody;
++
++    public MessageVerifier(boolean verifyMessageBody) {
++        this.exceptionHandler = (exception, type) -> new SignatureException(""exception of type: "" + type + "" occurred"");
++        this.securityProvider = keyId -> Security.getProvider(""SunRsaSign"");
++        this.algorithmProvider = keyId -> DefaultSignatureConstants.SIGNING_ALGORITHM;
++        this.verifyMessageBody = verifyMessageBody;
++    }
++
++    public MessageVerifier(PublicKeyProvider publicKeyProvider,
++                           ExceptionHandler exceptionHandler,
++                           SecurityProvider securityProvider,
++                           AlgorithmProvider algorithmProvider,
++                           boolean verifyMessageBody) {
++        Objects.requireNonNull(publicKeyProvider, ""public key provider cannot be null"");
++        Objects.requireNonNull(exceptionHandler, ""exception handler cannot be null"");
++        Objects.requireNonNull(securityProvider, ""security provider cannot be null"");
++        Objects.requireNonNull(algorithmProvider, ""algorithm provider cannot be null"");
++        this.publicKeyProvider = publicKeyProvider;
++        this.exceptionHandler = exceptionHandler;
++        this.securityProvider = securityProvider;
++        this.algorithmProvider = algorithmProvider;
++        this.verifyMessageBody = verifyMessageBody;
++    }
++
++    /**
++     * @return a map of the headers included in the signature
++     */
++    private static Map<String, List<String>> extractHeaders(Map<String, List<String>> allHeaders) {
++        assert allHeaders != null && allHeaders.containsKey(""Signature"") && allHeaders.get(""Signature"").size() == 1;
++
++        final String signature = allHeaders.get(""Signature"").get(0);
++        String headerList = new Scanner(signature).findWithinHorizon(""headers=\""[^,]+\"""", 0);
++        headerList = headerList.substring(""headers="".length() + 1); // Trim off prefix
++        headerList = headerList.substring(0, headerList.length() - 1); // Trim off trailing quote
++
++        Map<String, List<String>> headers = new HashMap<>();
++        for (String headerName : headerList.split("" "")) {
++            for (String possibleMatch : allHeaders.keySet()) {
++                if (possibleMatch.equalsIgnoreCase(headerName)) {
++                    headers.put(possibleMatch, allHeaders.get(possibleMatch));
++                }
++            }
++        }
++
++        return headers;
++    }
++
++    public void setSecurityProvider(SecurityProvider securityProvider) {
++        this.securityProvider = securityProvider;
++    }
++
++    public void setPublicKeyProvider(PublicKeyProvider publicKeyProvider) {
++        this.publicKeyProvider = publicKeyProvider;
++    }
++
++    public void setAlgorithmProvider(AlgorithmProvider algorithmProvider) {
++        this.algorithmProvider = algorithmProvider;
++    }
++
++    public ExceptionHandler getExceptionHandler() {
++        return exceptionHandler;
++    }
++
++    public void setExceptionHandler(ExceptionHandler exceptionHandler) {
++        this.exceptionHandler = exceptionHandler;
++    }
++
++    public void verifyMessage(Map<String, List<String>> messageHeaders, String messageBody) {
++        if (verifyMessageBody) {
++            inspectDigest(messageBody, messageHeaders);
++        }
++        verifyMessage(messageHeaders);
++    }
++
++    public void verifyMessage(Map<String, List<String>> messageHeaders) {
++        inspectIllegalState();
++
++        inspectMissingSignatureHeader(messageHeaders);
++
++        inspectMultipleSignatureHeaders(messageHeaders);
++
++        Signature signature = extractSignature(messageHeaders.get(""Signature"").get(0));
++
++        String providedAlgorithm = algorithmProvider.getAlgorithmName(signature.getKeyId());
++        Objects.requireNonNull(providedAlgorithm, ""provided algorithm is null"");
++
++        String signatureAlgorithm = signature.getAlgorithm().toString();
++        if (!providedAlgorithm.equals(signatureAlgorithm)) {
++            throw exceptionHandler.handle(new SignatureException(""algorithm from header and provided are different""),
++                    SignatureExceptionType.DIFFERENT_ALGORITHMS);
++        }
++
++        // Replace the algorithm provided by the headers with the algorithm given by the algorithm provider
++        Signature newSignature =
++                Signature.fromString(replaceAlgorithm(signature.toString(), signatureAlgorithm, providedAlgorithm));
++
++        Key key = publicKeyProvider.getKey(signature.getKeyId());
++        Objects.requireNonNull(key, ""provided public key is null"");
++
++        runVerifier(extractHeaders(messageHeaders), key, newSignature);
++    }
++
++    private String replaceAlgorithm(String signatureString, String oldAlgorithm, String newAlgorithm) {
++        return signatureString.replaceFirst(""algorithm=\"""" + oldAlgorithm, ""algorithm=\"""" + newAlgorithm);
++    }
++
++    private void inspectIllegalState() {
++        if (publicKeyProvider == null) {
++            throw new IllegalStateException(""public key provider is not set"");
++        }
++        if (exceptionHandler == null) {
++            throw new IllegalStateException(""exception handler is not set"");
++        }
++        if (securityProvider == null) {
++            throw new IllegalStateException(""security provider is not set"");
++        }
++        if (algorithmProvider == null) {
++            throw new IllegalStateException(""algorithm provider is not set"");
++        }
++    }
++
++    private void inspectDigest(String messageBody, Map<String, List<String>> responseHeaders) {
++        LOG.fine(""Starting digest verification"");
++        if (responseHeaders.containsKey(""Digest"")) {
++            String headerDigest = responseHeaders.get(""Digest"").get(0);
++
++            MessageDigest messageDigest = getDigestAlgorithm(headerDigest);
++            messageDigest.update(messageBody.getBytes(StandardCharsets.UTF_8));
++            String generatedDigest = new String(messageDigest.digest());
++
++            headerDigest = new String(Base64.getDecoder().decode(trimAlgorithmName(headerDigest)));
++
++            if (!generatedDigest.equals(headerDigest)) {
++                throw exceptionHandler
++                        .handle(new SignatureException(""the digest does not match the body of the message""),
++                                SignatureExceptionType.DIFFERENT_DIGESTS);
++            }
++        } else {
++            throw exceptionHandler.handle(new SignatureException(""failed to validate the digest""),
++                    SignatureExceptionType.MISSING_DIGEST);
++        }
++        LOG.fine(""Finished digest verification"");
++    }
++
++    private MessageDigest getDigestAlgorithm(String digestString) {
++        try {
++            return SignatureHeaderUtils.getDigestAlgorithm(digestString);","[{'comment': 'We should whitelist the set of acceptable digest algorithms here.', 'commenter': 'coheigea'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/SignatureHeaderUtils.java,"@@ -0,0 +1,118 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements. See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership. The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License. You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied. See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.cxf.rs.security.httpsignature;
++
++import java.security.MessageDigest;
++import java.security.NoSuchAlgorithmException;
++import java.util.*;
++import java.util.regex.Pattern;
++
++import static java.nio.charset.StandardCharsets.ISO_8859_1;
++
++public final class SignatureHeaderUtils {
++
++    private SignatureHeaderUtils() { }
++    /**
++     * Maps a multimap to a normal map with comma-separated values in case of duplicate headers
++     * @param multivaluedMap the multivalued map
++     * @return A map with comma-separated values
++     */
++    public static Map<String, String> mapHeaders(Map<String, List<String>> multivaluedMap) {
++        Map<String, String> mappedStrings = new HashMap<>();
++        for (String key : multivaluedMap.keySet()) {
++            mappedStrings.put(key, concatValues(multivaluedMap.get(key)));
++        }
++        return mappedStrings;
++    }
++
++    /**
++     * Loads and decodes a PEM key to be ready to create a KeySpec
++     * @param resource The raw bytes from a PEM file
++     * @return decoded bytes which can be input to a KeySpec
++     */
++    public static byte[] loadPEM(byte[] resource) {","[{'comment': ""This method isn't used in src/main - it should just be removed"", 'commenter': 'coheigea'}]"
+462,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/SignatureHeaderUtils.java,"@@ -0,0 +1,118 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements. See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership. The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License. You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied. See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.cxf.rs.security.httpsignature;
++
++import java.security.MessageDigest;
++import java.security.NoSuchAlgorithmException;
++import java.util.*;
++import java.util.regex.Pattern;
++
++import static java.nio.charset.StandardCharsets.ISO_8859_1;
++
++public final class SignatureHeaderUtils {
++
++    private SignatureHeaderUtils() { }
++    /**
++     * Maps a multimap to a normal map with comma-separated values in case of duplicate headers
++     * @param multivaluedMap the multivalued map
++     * @return A map with comma-separated values
++     */
++    public static Map<String, String> mapHeaders(Map<String, List<String>> multivaluedMap) {
++        Map<String, String> mappedStrings = new HashMap<>();
++        for (String key : multivaluedMap.keySet()) {
++            mappedStrings.put(key, concatValues(multivaluedMap.get(key)));
++        }
++        return mappedStrings;
++    }
++
++    /**
++     * Loads and decodes a PEM key to be ready to create a KeySpec
++     * @param resource The raw bytes from a PEM file
++     * @return decoded bytes which can be input to a KeySpec
++     */
++    public static byte[] loadPEM(byte[] resource) {
++        String pem = new String(resource, ISO_8859_1);
++        Pattern parse = Pattern.compile(""(?m)(?s)^---*BEGIN.*---*$(.*)^---*END.*---*$.*"");
++        String encoded = parse.matcher(pem).replaceFirst(""$1"");
++        return Base64.getMimeDecoder().decode(encoded);
++    }
++
++    /**
++     * Get a base64 encoded digest using the Algorithm specified, typically SHA-256
++     *
++     * @param messageBody         The body of the message to be used to create the Digest
++     * @param digestAlgorithmName The name of the algorithm used to create the digest, SHA-256 and SHA-512 are valid
++     * @return A base64 encoded digest ready to be added as a header to the message
++     * @throws NoSuchAlgorithmException If the user gives an unexpected digestAlgorithmName
++     */
++    public static String createDigestHeader(String messageBody, String digestAlgorithmName)
++            throws NoSuchAlgorithmException {
++        MessageDigest messageDigest = getDigestAlgorithm(digestAlgorithmName);
++        messageDigest.update(messageBody.getBytes());
++        return digestAlgorithmName + ""="" + new String(Base64.getEncoder().encode(messageDigest.digest()));","[{'comment': 'Base64.getEncoder().encodeToString(...) here', 'commenter': 'coheigea'}]"
+475,rt/rs/client/src/main/java/org/apache/cxf/jaxrs/client/cache/Entry.java,"@@ -64,12 +66,19 @@ public void setData(final Serializable data) {
+         this.data = data;
+     }
+ 
+-    public MultivaluedMap<String, String> getHeaders() {
++    public Map<String, List<String>> getHeaders() {","[{'comment': 'This an API change, perhaps best to convert back into a MultivaluedMap for backwards compatiblity', 'commenter': 'coheigea'}, {'comment': 'I will do, in any case that API is only used in org.apache.cxf.jaxrs.client.cache.CacheControlClientRequestFilter where the mere Map API is really used', 'commenter': 'nbuso'}]"
+475,rt/rs/client/src/main/java/org/apache/cxf/jaxrs/client/cache/Entry.java,"@@ -64,12 +66,19 @@ public void setData(final Serializable data) {
+         this.data = data;
+     }
+ 
+-    public MultivaluedMap<String, String> getHeaders() {
++    public Map<String, List<String>> getHeaders() {
+         return headers;
+     }
+ 
++    private void initHeaders(final  MultivaluedMap<String, String> mHeaders) {
++        this.headers = new HashMap<>();
++        mHeaders.keySet().forEach(key -> {","[{'comment': 'This can be replaced with: headers.putAll(mHeaders);', 'commenter': 'coheigea'}]"
+475,rt/rs/client/src/main/java/org/apache/cxf/jaxrs/client/cache/CacheControlClientRequestFilter.java,"@@ -64,7 +66,15 @@ public void filter(final ClientRequestContext request) throws IOException {
+             //TODO: do the extra validation against the conditional headers
+             //      which may be contained in the current request
+             if (entry.isOutDated()) {
+-                cache.remove(key, entry);
++                String ifNoneMatchHeader = entry.getCacheHeaders().get(HttpHeaders.IF_NONE_MATCH);
++                String ifModifiedSinceHeader = entry.getCacheHeaders().get(HttpHeaders.IF_MODIFIED_SINCE);
++                
++                if (StringUtils.isEmpty(ifNoneMatchHeader) && StringUtils.isEmpty(ifModifiedSinceHeader)) {
++                    cache.remove(key, entry);
++                } else {
++                    request.getHeaders().add(HttpHeaders.IF_NONE_MATCH, ifNoneMatchHeader);","[{'comment': ""I think you're also missing this:\r\nrequest.getHeaders().add(HttpHeaders.IF_MODIFIED_SINCE, ifModifiedSinceHeader);"", 'commenter': 'coheigea'}]"
+481,core/src/main/java/org/apache/cxf/common/util/PackageUtils.java,"@@ -57,7 +58,7 @@ public static String getSharedPackageName(List<Class<?>> classes) {
+         List<String> currentParts = new ArrayList<>();
+         for (Class<?> cls : classes) {
+             if (!Proxy.isProxyClass(cls)) {
+-                lParts.add(StringUtils.getParts(getPackageName(cls), ""\\.""));
++                lParts.add(Arrays.asList(getPackageName(cls).split(""\\."")));","[{'comment': 'StringUtils.getParts() only added the Strings if they were non-empty, whereas String.split will include empty Strings. I think it should be changed to preserve the old behaviour. Same goes for AbstractHTTPDestination.', 'commenter': 'coheigea'}, {'comment': ""PackageUtils: 'A package name must not contain two consecutive dots' (Eclipse validation)\r\nAbstractHTTPDestination: according to [1] only single space character accepted\r\n1. https://tools.ietf.org/html/rfc1945#section-11.1"", 'commenter': 'amarkevich'}, {'comment': 'OK thanks.', 'commenter': 'coheigea'}]"
+481,rt/frontend/jaxrs/src/main/java/org/apache/cxf/jaxrs/impl/HttpHeadersImpl.java,"@@ -254,10 +257,15 @@ public MediaType getMediaType() {
+         return getHeaderValues(headerName, originalValue, DEFAULT_SEPARATOR);
+     }
+ 
+-    private List<String> getHeaderValues(String headerName, String originalValue, String sep) {
++    private static List<String> getHeaderValues(String headerName, String originalValue, String sep) {
+         if (!originalValue.contains(QUOTE)
+             || HEADERS_WITH_POSSIBLE_QUOTES.contains(headerName)) {
+-            String[] ls = StringUtils.split(originalValue, sep);
++            final String[] ls; 
++            if (COOKIE_SEPARATOR_CRLF_EXPRESSION != sep) {
++                ls = originalValue.split(sep);
++            } else {
++                ls = COOKIE_SEPARATOR_CRLF_PATTERN.split(originalValue);
++            }","[{'comment': 'I just have a minor reservation about this change. If the user specifies a custom separator that is larger than one character, then String.split will create a Pattern each time this is evaluated. Maybe instead we should move the cache of Patterns internally into this class to avoid this?', 'commenter': 'coheigea'}, {'comment': 'only CRLF accepted (HttpHeadersImplTest#testInvalidCookieSeparator)', 'commenter': 'amarkevich'}, {'comment': ""Oh yeah sorry, I didn't spot the length of the custom value"", 'commenter': 'coheigea'}]"
+507,parent/pom.xml,"@@ -164,7 +164,7 @@
+         <cxf.spring.osgi.version>1.2.1</cxf.spring.osgi.version>
+         <cxf.spring.ldap.version>2.3.2.RELEASE</cxf.spring.ldap.version>
+         <cxf.spring.mock>spring-test</cxf.spring.mock>
+-        <cxf.swagger2.version>1.5.17</cxf.swagger2.version><!-- updating to 1.5.18 will cause systest failures -->
++        <cxf.swagger2.version>1.5.21</cxf.swagger2.version><!-- updating to 1.5.18 will cause systest failures -->","[{'comment': ""I'd remove this comment"", 'commenter': 'ilgrosso'}, {'comment': 'Done.', 'commenter': 'jwcarman'}]"
+507,parent/pom.xml,"@@ -164,7 +164,7 @@
+         <cxf.spring.osgi.version>1.2.1</cxf.spring.osgi.version>
+         <cxf.spring.ldap.version>2.3.2.RELEASE</cxf.spring.ldap.version>
+         <cxf.spring.mock>spring-test</cxf.spring.mock>
+-        <cxf.swagger2.version>1.5.17</cxf.swagger2.version><!-- updating to 1.5.18 will cause systest failures -->
++        <cxf.swagger2.version>1.5.21</cxf.swagger2.version>","[{'comment': ':+1: ', 'commenter': 'reta'}]"
+507,rt/rs/description-swagger/src/main/java/org/apache/cxf/jaxrs/swagger/Swagger2Feature.java,"@@ -151,6 +152,8 @@ protected void addSwaggerResource(Server server, Bus bus) {
+         swaggerResources.add(apiListingResource);
+ 
+         List<Object> providers = new ArrayList<>();
++        providers.add(new SwaggerSerializers());","[{'comment': ':+1:, we could also get rid of some code in `3.1.x` I think', 'commenter': 'reta'}]"
+507,rt/rs/description-swagger/src/main/java/org/apache/cxf/jaxrs/swagger/openapi/SwaggerToOpenApiConversionFilter.java,"@@ -55,7 +57,8 @@ public void filter(ContainerRequestContext reqCtx) throws IOException {
+     @Override
+     public void filter(ContainerRequestContext reqCtx, ContainerResponseContext respCtx) throws IOException {
+         if (Boolean.TRUE == reqCtx.getProperty(OPEN_API_PROPERTY)) {
+-            String swaggerJson = (String)respCtx.getEntity();
++            String swaggerJson = respCtx.getEntity() instanceof String ? (String)respCtx.getEntity()","[{'comment': 'Minor, `String swaggerJson = Json.mapper().writeValueAsString(respCtx.getEntity());` should do it.', 'commenter': 'reta'}, {'comment': 'I was trying to maintain the exact functionality in a 1.5.17 world if I could.', 'commenter': 'jwcarman'}, {'comment': 'It is exactly the same: the mapper does nothing for `String` (returns the same string back) but convert to JSON any object (same is done with `?:`)', 'commenter': 'reta'}, {'comment': '@jwcarman Please disregard my comment, the behavior is not identical (I thought it was).', 'commenter': 'reta'}]"
+507,rt/rs/description-swagger/src/main/java/org/apache/cxf/jaxrs/swagger/parse/SwaggerParseUtils.java,"@@ -131,41 +131,41 @@ public static UserApplication getUserApplicationFromJson(String json,
+                 userOp.setVerb(operEntry.getKey().toUpperCase());
+ 
+                 Map<String, Object> oper = CastUtils.cast((Map<?, ?>)operEntry.getValue());
+-                
+-                userOp.setPath(operPath);
+-
+-                userOp.setName((String)oper.get(""operationId""));
+-                List<String> opProduces = CastUtils.cast((List<?>)oper.get(""produces""));
+-                userOp.setProduces(listToString(opProduces));
+-
+-                List<String> opConsumes = CastUtils.cast((List<?>)oper.get(""consumes""));
+-                userOp.setConsumes(listToString(opConsumes));
+-
+-                List<Parameter> userOpParams = new LinkedList<>();
+-                List<Map<String, Object>> params = CastUtils.cast((List<?>)oper.get(""parameters""));
+-                for (Map<String, Object> param : params) {
+-                    String name = (String)param.get(""name"");
+-                    //""query"", ""header"", ""path"", ""formData"" or ""body""
+-                    String paramType = (String)param.get(""in"");
+-                    ParameterType pType = ""body"".equals(paramType) ? ParameterType.REQUEST_BODY
+-                        : ""formData"".equals(paramType)
+-                        ? ParameterType.FORM : ParameterType.valueOf(paramType.toUpperCase());
+-                    Parameter userParam = new Parameter(pType, name);
+-
+-                    setJavaType(userParam, (String)param.get(""type""));
+-                    userOpParams.add(userParam);
++                if (oper != null) {","[{'comment': 'Just to understand, the `oper` is null when API has no any endpoints / operations exposed?', 'commenter': 'reta'}, {'comment': 'When I debugged it, the map that came back had keys for all the HTTP methods, even i they weren\'t supported by the endpoint.  My guess is that their previous JSON serialization suppressed properties with null values and the new one doesn\'t.  So, now you\'ll get a ""head"" property with a null value.  ', 'commenter': 'jwcarman'}, {'comment': ':+1: ', 'commenter': 'reta'}]"
+514,rt/features/logging/src/main/java/org/apache/cxf/ext/logging/event/DefaultLogEventMapper.java,"@@ -46,17 +44,25 @@
+ import org.apache.cxf.ws.addressing.ContextUtils;
+ 
+ public class DefaultLogEventMapper {
+-    private static final Set<String> BINARY_CONTENT_MEDIA_TYPES;
++    private static final Set<String> DEFAULT_BINARY_CONTENT_MEDIA_TYPES;
+     static {
+-        BINARY_CONTENT_MEDIA_TYPES = new HashSet<>();
+-        BINARY_CONTENT_MEDIA_TYPES.add(""application/octet-stream"");
+-        BINARY_CONTENT_MEDIA_TYPES.add(""application/pdf"");
+-        BINARY_CONTENT_MEDIA_TYPES.add(""image/png"");
+-        BINARY_CONTENT_MEDIA_TYPES.add(""image/jpeg"");
+-        BINARY_CONTENT_MEDIA_TYPES.add(""image/gif"");
++        DEFAULT_BINARY_CONTENT_MEDIA_TYPES = new HashSet<>();
++        DEFAULT_BINARY_CONTENT_MEDIA_TYPES.add(""application/octet-stream"");
++        DEFAULT_BINARY_CONTENT_MEDIA_TYPES.add(""application/pdf"");
++        DEFAULT_BINARY_CONTENT_MEDIA_TYPES.add(""image/png"");
++        DEFAULT_BINARY_CONTENT_MEDIA_TYPES.add(""image/jpeg"");
++        DEFAULT_BINARY_CONTENT_MEDIA_TYPES.add(""image/gif"");
+     }
+     private static final String MULTIPART_CONTENT_MEDIA_TYPE = ""multipart"";
+ 
++    private final Set<String> binaryContentMediaTypes = new HashSet<>(DEFAULT_BINARY_CONTENT_MEDIA_TYPES);
++
++    public void setBinaryContentMediaTypes(String mediaTypes) {","[{'comment': 'Maybe it\'d be better to call this ""addBinaryContentMediaTypes"", as it adds to what\'s already there, as opposed to setting the values.', 'commenter': 'coheigea'}, {'comment': 'Correct this', 'commenter': 'shadrin-nv'}]"
+514,rt/features/logging/src/main/java/org/apache/cxf/ext/logging/LoggingFeature.java,"@@ -117,4 +117,50 @@ public void setLogMultipart(boolean logMultipart) {
+     public void setVerbose(boolean verbose) {
+         setSender(verbose ? new Slf4jVerboseEventSender() : new Slf4jEventSender());
+     }
++
++    /**
++     * Set binary media types for Logging In Interceptor.
++     * Contet for these types was not logged.","[{'comment': '""Content"" not ""Contet"" (Same below as well)', 'commenter': 'coheigea'}, {'comment': 'Correct this', 'commenter': 'shadrin-nv'}]"
+514,rt/features/logging/src/main/java/org/apache/cxf/ext/logging/event/DefaultLogEventMapper.java,"@@ -46,17 +44,25 @@
+ import org.apache.cxf.ws.addressing.ContextUtils;
+ 
+ public class DefaultLogEventMapper {
+-    private static final Set<String> BINARY_CONTENT_MEDIA_TYPES;
++    private static final Set<String> DEFAULT_BINARY_CONTENT_MEDIA_TYPES;","[{'comment': ""Trivial improvement suggestion: since this field seems to want to be immutable, I think it's better to initialize it using this pattern: https://github.com/spring-projects/spring-framework/blob/master/spring-context/src/main/java/org/springframework/format/datetime/DateTimeFormatAnnotationFormatterFactory.java#L43\r\nI know this PR just renames the field, but maybe the initialization can be improved too 🙂"", 'commenter': 'andrei-ivanov'}, {'comment': 'Actually, I would remove this set by default. But forcing everyone to tune it is not good.', 'commenter': 'shadrin-nv'}, {'comment': 'I think what @andrei-ivanov meant here is that this patch could use Collections.unmodifiableSet instead?', 'commenter': 'coheigea'}, {'comment': 'But, i need modifiable set, in order to be able to customize it.\r\nMay be remove DEFAULT_BINARY_CONTENT_MEDIA_TYPES from class and stay only binaryContentMediaTypes varible? And initialize it in constuctor.\r\n', 'commenter': 'shadrin-nv'}, {'comment': ""Hmm, as far as I see, `DEFAULT_BINARY_CONTENT_MEDIA_TYPES` doesn't get modified, it is copied to `binaryContentMediaTypes` on line 60 and that set is modified."", 'commenter': 'andrei-ivanov'}, {'comment': 'Logically, we don’t need this set at all as a separate instance.\r\nI propose to abandon it. And configure only the editable set at once.\r\n    public DefaultLogEventMapper() {\r\n        binaryContentMediaTypes.add(""application/octet-stream"");\r\n        binaryContentMediaTypes.add(""application/pdf"");\r\n        binaryContentMediaTypes.add(""image/png"");\r\n        binaryContentMediaTypes.add(""image/jpeg"");\r\n        binaryContentMediaTypes.add(""image/gif"");\r\n    }\r\n\r\nWhat do you think? Would that be more correct?', 'commenter': 'shadrin-nv'}, {'comment': ""No I think it's easier just to leave it as it is. I'll make the change to use an unmodifiable set locally."", 'commenter': 'coheigea'}, {'comment': 'Thanks. Than i close pull request.', 'commenter': 'shadrin-nv'}, {'comment': 'No, please re-open it, I will merge it and fix up the other thing locally.', 'commenter': 'coheigea'}, {'comment': 'I apologize for the delay', 'commenter': 'shadrin-nv'}]"
+533,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/filters/VerifySignatureFilter.java,"@@ -23,14 +23,12 @@
+ import javax.ws.rs.Priorities;
+ import javax.ws.rs.container.ContainerRequestContext;
+ import javax.ws.rs.container.ContainerRequestFilter;
+-import javax.ws.rs.container.PreMatching;
+ import javax.ws.rs.ext.Provider;
+ 
+ /**
+  * RS CXF container Filter which extracts signature data from the context and sends it to the message verifier
+  */
+ @Provider
+-@PreMatching","[{'comment': ""I think I'd prefer to keep it for the ContainerRequestFilter case - CXF does this for all of the other ContainerRequestFilter security implementations in JOSE, XML Security, etc."", 'commenter': 'coheigea'}, {'comment': 'Hm - that\'s actually where I need it in order to do:\r\n\r\n```\r\n+@Provider\r\n+@Priority(Priorities.AUTHENTICATION)\r\n+public class DynamicVerifySignatureFilter implements ResourceInfoAware, ContainerRequestFilter {\r\n+  private final Logger logger = LoggerFactory.getLogger(DynamicVerifySignatureFilter.class);\r\n+  private final ContainerRequestFilter delegate;\r\n+  private ResourceInfo resourceInfo;\r\n+\r\n+  public DynamicVerifySignatureFilter(ContainerRequestFilter delegate) {\r\n+    this.delegate = delegate;\r\n+  }\r\n+\r\n+  @Override\r\n+  public void filter(ContainerRequestContext requestContext) throws IOException {\r\n+    if (isIgnored()) {\r\n+      logger.warn(\r\n+          ""Resource: class: {} method: {} is exempted for signature-check"",\r\n+          resourceInfo.getResourceClass(),\r\n+          resourceInfo.getResourceMethod().getName());\r\n+    } else {\r\n+      this.delegate.filter(requestContext);\r\n+    }\r\n+  }\r\n+\r\n+  private boolean isIgnored() {\r\n+    return null\r\n+            != AnnotationUtils.findAnnotation(\r\n+                getResourceInfo().getResourceMethod(), IgnoreSigning.class)\r\n+        || null\r\n+            != AnnotationUtils.findAnnotation(\r\n+                getResourceInfo().getResourceClass(), IgnoreSigning.class);\r\n+  }\r\n+\r\n+  @Override\r\n+  public void setResourceInfo(ResourceInfo resourceInfo) {\r\n+    this.resourceInfo = resourceInfo;\r\n+  }\r\n+\r\n+  private ResourceInfo getResourceInfo() {\r\n+    return new ResourceInfoImpl(PhaseInterceptorChain.getCurrentMessage());\r\n+  }\r\n```\r\n\r\nor else the resourceInfo can\'t be resolved at this stage.\r\nI can however keep on wrapping it in a delegate filter as shown to defer the decision until the matcher has found the target resource - but it adds cruft.', 'commenter': 'davidkarlsen'}, {'comment': 'What is the reason for having it in @PreMatching as https://docs.jboss.org/resteasy/docs/3.0.21.Final/userguide/html/Interceptors.html seems to suggest that the use-case for PreMatching is mainly for altering the request (which might influence the matcher):\r\n\r\n_Pre-matching ContainerRequestFilters are designated with the @PreMatching annotation and will execute before the JAX-RS resource method is matched with the incoming HTTP request. Pre-matching filters often are used to modify request attributes to change how it matches to a specific resource method (i.e. strip .xml and add an Accept header). ContainerRequestFilters can abort the request by calling ContainerRequestContext.abortWith(Response). A filter might want to abort if it implements a custom authentication protocol._', 'commenter': 'davidkarlsen'}]"
+533,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/filters/VerifySignatureClientFilter.java,"@@ -32,7 +31,6 @@
+  * RS CXF client Filter which extracts signature data from the context and sends it to the message verifier
+  */
+ @Provider
+-@PreMatching","[{'comment': 'You could also get rid of it in CreateSignatureFilter', 'commenter': 'coheigea'}]"
+538,systests/jaxws/src/test/java/org/apache/cxf/systest/jaxws/EchoServiceImpl.java,"@@ -0,0 +1,63 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements. See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership. The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License. You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied. See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.cxf.systest.jaxws;
++
++import javax.jws.WebService;
++import javax.xml.namespace.QName;
++import javax.xml.soap.SOAPConstants;
++import javax.xml.soap.SOAPFactory;
++import javax.xml.soap.SOAPFault;
++import javax.xml.ws.soap.SOAPFaultException;
++
++import org.apache.cxf.ext.logging.Logging;
++
++@WebService(name = ""MyEchoService"", targetNamespace = ""urn:echo"")
++@Logging
++public class EchoServiceImpl {","[{'comment': '""implements EchoService""', 'commenter': 'coheigea'}]"
+538,core/src/main/java/org/apache/cxf/interceptor/FaultOutInterceptor.java,"@@ -25,6 +25,7 @@
+ import java.util.logging.Logger;
+ 
+ import javax.xml.stream.XMLStreamWriter;
++import javax.xml.ws.soap.SOAPFaultException;","[{'comment': ""\r\nThis makes core depend on SAAJ which is definitely not what we'd want to do.   Let me take a look at the test case to see if there is a different way to handle this from the jaxws fault interceptors."", 'commenter': 'dkulp'}]"
+540,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/filters/CreateDigestInterceptor.java,"@@ -62,10 +70,17 @@ public void aroundWriteTo(WriterInterceptorContext context) throws IOException {
+         if (shouldAddDigest(context)) {
+             addDigest(context);
+         } else {
++            sign(context);
+             context.proceed();
+         }
+     }
+ 
++    private void sign(WriterInterceptorContext writerInterceptorContext) {
++        String method = HttpUtils.getProtocolHeader(JAXRSUtils.getCurrentMessage(),
++            Message.HTTP_REQUEST_METHOD, """");
++        performSignature(writerInterceptorContext.getHeaders(), uriInfo.getPath(), method);","[{'comment': 'This should be: uriInfo.getRequestUri().getPath()', 'commenter': 'coheigea'}]"
+540,rt/rs/security/http-signature/src/main/java/org/apache/cxf/rs/security/httpsignature/filters/CreateDigestInterceptor.java,"@@ -24,25 +24,33 @@
+ 
+ import javax.annotation.Priority;
+ import javax.ws.rs.Priorities;
++import javax.ws.rs.core.Context;
+ import javax.ws.rs.core.MediaType;
++import javax.ws.rs.core.UriInfo;
+ import javax.ws.rs.ext.Provider;
+ import javax.ws.rs.ext.WriterInterceptor;
+ import javax.ws.rs.ext.WriterInterceptorContext;
+ 
+ import org.apache.cxf.common.util.MessageDigestInputStream;
+ import org.apache.cxf.helpers.IOUtils;
+ import org.apache.cxf.io.CachedOutputStream;
++import org.apache.cxf.jaxrs.utils.HttpUtils;
++import org.apache.cxf.jaxrs.utils.JAXRSUtils;
++import org.apache.cxf.message.Message;
+ import org.apache.cxf.rs.security.httpsignature.utils.SignatureHeaderUtils;
+ 
+ /**
+  * RS WriterInterceptor which adds digests of the body.
+  */
+ @Provider
+ @Priority(Priorities.HEADER_DECORATOR)
+-public class CreateDigestInterceptor implements WriterInterceptor {
++public class CreateDigestInterceptor extends AbstractSignatureOutFilter implements WriterInterceptor {","[{'comment': 'Rename to CreateSignatureInterceptor', 'commenter': 'coheigea'}]"
+558,core/src/main/java/org/apache/cxf/common/util/Compiler.java,"@@ -85,6 +85,31 @@ public void setClassPath(String s) {
+         classPath = StringUtils.isEmpty(s) ? null : s;
+     }
+ 
++    // https://issues.apache.org/jira/browse/CXF-8049
++    private String getSystemClassPath() {
++        String javaClasspath = SystemPropertyAction.getProperty(""java.class.path"");
++
++        if (!StringUtils.isEmpty(javaClasspath)) {
++            List<String> correctedEntries = new ArrayList<>();
++
++            String[] toks = javaClasspath.split(File.pathSeparator);
++            
++            for (String tok: toks) {
++                // if any classpath entry contains a whitespace char, 
++                // enclose the entry in double quotes
++                if (tok.matches("".*\\s+.*"")) {
++                    correctedEntries.add(""\"""" + tok + ""\"""");
++                } else {
++                    correctedEntries.add(tok);
++                }
++            }
++
++            return String.join(File.pathSeparator, correctedEntries);
++        }
++
++        return """";","[{'comment': 'It could just return javaClasspath here', 'commenter': 'coheigea'}, {'comment': '+1\r\n@coheigea , sorry I missed your comment and merged the PR, I will make another commit to address accordingly.\r\n\r\nCheers\r\nFreeman', 'commenter': 'ffang'}]"
+569,distribution/src/main/release/samples/ws_transaction/README.md,"@@ -0,0 +1,40 @@
++CXF Web Service Transaction Demo
++================================
++This demo shows how to use the JTA->WSAT->JTA bridge in the two differnet web services by using the apache-cxf, spring-boot and narayana.
++
++Buiding and running the demo
++----------------------------
++
++From the base directory of this sample you should use maven to build it
++```
++mvn clean install
++```
++
++And open the console to launch the first web service FirstServiceAT
++```
++cd ws_first
++mvn spring-boot:run
++```
++open another console to launch the second web service SecondServiceAT
++```
++cd ws_second
++mvn spring-boot:run
++```
++
++Now you need to run the demo
++```
++cd client
++mvn test -Ptest
++```
++
++JTA->WSAT bridge in the client side
++================
++It can wrap the local transaction and create a bridge between the JTA and WSAT transaction. 
++From the client side, we use the *JaxWSTxOutboundBridgeHandler* to create a mapping of the JTA and Subordinate WSAT
++also the *EnabledWSTXHandler* to propagate the WSAT transaction in the SOAP message headers.
++
++WSAT->JTA bridge in the server side
++================
++From the server side, we use the *JaxWSSubordinateHeaderContextProcessor* to import the Subordinate WSAT transaction from the outside
++and the *JaxWSHeaderContextProcessor* to resume the WSAT transaction and the *OptionalJaxWSTxInboundBridgeHandler* to create the bridge
++the WSAT and JTA.","[{'comment': 'I think we should add a note to the README to mention that this example uses dependencies that are licensed under the LGPL and thus may have additional restrictions beyond the Apache License.    Explicitly listing the transaction manager (and hibernate) as having the potentially problematic license in the READ is likely good enough.    Users can then decide to use or not use the source in this example.', 'commenter': 'dkulp'}]"
+569,distribution/src/main/release/samples/ws_transaction/client/pom.xml,"@@ -0,0 +1,38 @@
++<?xml version=""1.0"" encoding=""UTF-8""?>
++<project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">","[{'comment': 'The apache license header needs to go in here.', 'commenter': 'dkulp'}, {'comment': 'yeah, I added it.', 'commenter': 'zhfeng'}]"
+585,rt/rs/client/src/main/java/org/apache/cxf/jaxrs/client/ClientProxyImpl.java,"@@ -477,16 +477,18 @@ protected void checkResponse(Method m, Response r, Message inMessage) throws Thr
+         List<MediaType> accepts = getAccept(headers);
+         if (accepts == null) {
+             List<MediaType> produceTypes = ori.getProduceTypes();","[{'comment': 'LGTM but here ""produceTypes"" could be in the else statement instead.', 'commenter': 'coheigea'}]"
+604,rt/rs/security/jose-parent/jose/src/main/java/org/apache/cxf/rs/security/jose/jwe/AesCbcHmacJweEncryption.java,"@@ -19,66 +19,50 @@
+ package org.apache.cxf.rs.security.jose.jwe;
+ 
+ import java.nio.ByteBuffer;
+-import java.security.spec.AlgorithmParameterSpec;
+-import java.util.HashMap;
+-import java.util.Map;
+ 
+ import javax.crypto.Mac;
+-import javax.crypto.spec.IvParameterSpec;
+ 
+-import org.apache.cxf.rs.security.jose.jwa.AlgorithmUtils;
+ import org.apache.cxf.rs.security.jose.jwa.ContentAlgorithm;
+ import org.apache.cxf.rt.security.crypto.HmacUtils;
+ 
+ public class AesCbcHmacJweEncryption extends JweEncryption {
+-    private static final Map<String, String> AES_HMAC_MAP;
+-    private static final Map<String, Integer> AES_CEK_SIZE_MAP;
+-    static {
+-        AES_HMAC_MAP = new HashMap<>();
+-        AES_HMAC_MAP.put(ContentAlgorithm.A128CBC_HS256.getJwaName(), AlgorithmUtils.HMAC_SHA_256_JAVA);
+-        AES_HMAC_MAP.put(ContentAlgorithm.A192CBC_HS384.getJwaName(), AlgorithmUtils.HMAC_SHA_384_JAVA);
+-        AES_HMAC_MAP.put(ContentAlgorithm.A256CBC_HS512.getJwaName(), AlgorithmUtils.HMAC_SHA_512_JAVA);
+-
+-        AES_CEK_SIZE_MAP = new HashMap<>();
+-        AES_CEK_SIZE_MAP.put(ContentAlgorithm.A128CBC_HS256.getJwaName(), 32);
+-        AES_CEK_SIZE_MAP.put(ContentAlgorithm.A192CBC_HS384.getJwaName(), 48);
+-        AES_CEK_SIZE_MAP.put(ContentAlgorithm.A256CBC_HS512.getJwaName(), 64);
+-    }
++    
+     public AesCbcHmacJweEncryption(ContentAlgorithm cekAlgoJwt,
+                                    KeyEncryptionProvider keyEncryptionAlgorithm) {
+         this(cekAlgoJwt, keyEncryptionAlgorithm, false);
+     }
++    
+     public AesCbcHmacJweEncryption(ContentAlgorithm cekAlgoJwt,
+                                    KeyEncryptionProvider keyEncryptionAlgorithm,
+                                    boolean generateCekOnce) {
+-        super(keyEncryptionAlgorithm,
+-              new AesCbcContentEncryptionAlgorithm(validateCekAlgorithm(cekAlgoJwt),
+-                                                   generateCekOnce));
++        super(keyEncryptionAlgorithm, new AesCbcContentEncryptionAlgorithm(cekAlgoJwt, generateCekOnce));
+     }
++    
+     public AesCbcHmacJweEncryption(ContentAlgorithm cekAlgoJwt, byte[] cek,
+                                    byte[] iv, KeyEncryptionProvider keyEncryptionAlgorithm) {
+-        super(keyEncryptionAlgorithm,
+-              new AesCbcContentEncryptionAlgorithm(cek, iv,
+-                                                   validateCekAlgorithm(cekAlgoJwt)));
+-
++        super(keyEncryptionAlgorithm, new AesCbcContentEncryptionAlgorithm(cek, iv, cekAlgoJwt));
++    }
++    
++    public AesCbcHmacJweEncryption(KeyEncryptionProvider keyEncryptionAlgorithm, AesCbcContentEncryptionAlgorithm contentEncryptionAlgorithm) {
++        super(keyEncryptionAlgorithm, contentEncryptionAlgorithm);
+     }
++    
+     @Override
+     protected byte[] getActualCek(byte[] theCek, String algoJwt) {
+         return doGetActualCek(theCek, algoJwt);
+     }
++    
+     protected static byte[] doGetActualCek(byte[] theCek, String algoJwt) {
+-        int size = getFullCekKeySize(algoJwt) / 2;
++        int size = AesCbcContentEncryptionAlgorithm.getFullCekKeySize(algoJwt) / 2;
+         byte[] actualCek = new byte[size];
+-        System.arraycopy(theCek, size, actualCek, 0, size);
++        System.arraycopy(theCek, 0, actualCek, 0, size);","[{'comment': 'I think this change may not be correct. The spec says that for AES_128_CBC_HMAC_SHA_256 the input key must be 32 bytes, and the test in JweJsonProducerTest.testMultipleRecipientsA128CBCHS256GivenCek is passing in a 16 byte key hence the error:\r\n\r\n""The input key K is 32 octets long.""\r\nhttps://tools.ietf.org/html/rfc7518#section-5.2.3', 'commenter': 'coheigea'}]"
+604,rt/rs/security/jose-parent/jose/src/main/java/org/apache/cxf/rs/security/jose/jwe/AesCbcContentEncryptionAlgorithm.java,"@@ -0,0 +1,82 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements. See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership. The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License. You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied. See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.cxf.rs.security.jose.jwe;
++
++import java.security.spec.AlgorithmParameterSpec;
++import java.util.HashMap;
++import java.util.Map;
++
++import javax.crypto.spec.IvParameterSpec;
++
++import org.apache.cxf.rs.security.jose.jwa.AlgorithmUtils;
++import org.apache.cxf.rs.security.jose.jwa.ContentAlgorithm;
++
++public class AesCbcContentEncryptionAlgorithm extends AbstractContentEncryptionAlgorithm {
++    
++    static final Map<String, String> AES_HMAC_MAP;
++    static final Map<String, Integer> AES_CEK_SIZE_MAP;","[{'comment': ""I'd prefer to make these private and add getter methods. Either that or make them unmodifiable maps."", 'commenter': 'coheigea'}]"
+633,parent/pom.xml,"@@ -247,7 +247,8 @@
+         <cxf.oauth.bundle.version>20100527_1</cxf.oauth.bundle.version>
+         <cxf.oro.bundle.version>2.0.8_6</cxf.oro.bundle.version>
+         <cxf.osgi.saaj.version>[1.4,2)</cxf.osgi.saaj.version>
+-        <cxf.osgi.version>5.0.0</cxf.osgi.version>
++        <cxf.osgi.version>6.0.0</cxf.osgi.version>
++        <cxf.osgi.compendium.version>5.0.0</cxf.osgi.compendium.version>","[{'comment': 'Why not upgrading to 6.0.0 as well using the updated coordinates ?', 'commenter': 'jbonofre'}, {'comment': 'changed to artifact osgi.cmpn', 'commenter': 'amarkevich'}]"
+633,parent/pom.xml,"@@ -1320,7 +1321,7 @@
+             <dependency>
+                 <groupId>org.osgi</groupId>
+                 <artifactId>org.osgi.compendium</artifactId>","[{'comment': 'We should better use the updated coordinates (osgi.cmpn).', 'commenter': 'jbonofre'}, {'comment': 'done', 'commenter': 'amarkevich'}]"
+637,rt/rs/description-swagger-ui/src/test/java/org/apache/cxf/jaxrs/swagger/ui/SwaggerUIResourceLocatorTest.java,"@@ -0,0 +1,46 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements. See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership. The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License. You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied. See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++
++package org.apache.cxf.jaxrs.swagger.ui;
++
++import java.net.MalformedURLException;
++
++import org.junit.Test;
++
++
++
++public class SwaggerUIResourceLocatorTest {
++
++    @Test","[{'comment': 'use @Test(expected = MalformedURLException .class)  instead of inner try-catch', 'commenter': 'amarkevich'}, {'comment': 'got it', 'commenter': 'natechadwick'}]"
+637,rt/rs/description-swagger-ui/src/main/java/org/apache/cxf/jaxrs/swagger/ui/SwaggerUiResourceLocator.java,"@@ -50,8 +50,14 @@ public URL locate(String resourcePath) throws MalformedURLException {
+         if (resourcePath.startsWith(""/"")) {
+             resourcePath = resourcePath.substring(1);
+         }
++        URL ret;
+ 
+-        return URI.create(swaggerUiRoot + resourcePath).toURL();
++        try {
++            ret = URI.create(swaggerUiRoot + resourcePath).toURL();
++        } catch (Exception ex) {","[{'comment': 'The `URI.create` may thrown only `IllegalArgumentException` exception, could you please use it instead of generic `Exception`? Thank you.', 'commenter': 'reta'}, {'comment': 'I can do that, but the way that the code is currently implemented, the only caller is looking for a MalformedURLException if there is any problem in this method, and the request chain gets nuked if any other exception is thrown which is kinda catastrophic.  Was thinking that any exception from this method should raise the MalformedURLException so the caller just returns false. Future proofing.  If you still want the specific exception caught I can edit and resubmit. ', 'commenter': 'natechadwick'}, {'comment': 'Thanks for the response, it is fine to raise `MalformedURLException` as you did, the `URI.create` does not do anything beside parsing and throwing `IllegalArgumentException`:\r\n```\r\n        try {\r\n            return URI.create(swaggerUiRoot + resourcePath).toURL();\r\n        } catch (IllegalArgumentException ex) {\r\n            throw new MalformedURLException(ex.getMessage(), ex);\r\n        }\r\n```\r\nThank you.', 'commenter': 'reta'}, {'comment': 'To avoid additional knowledge about internal RuntimeException rising a regular constructor with checked URISyntaxException can be used:\r\n```\r\n        try {\r\n            return new URI(swaggerUiRoot + resourcePath).toURL();\r\n        } catch (URISyntaxException ex) {\r\n            throw new MalformedURLException(ex.getMessage());\r\n        }\r\n```\r\n\r\n', 'commenter': 'amarkevich'}]"
+641,rt/management/src/main/java/org/apache/cxf/management/jmx/MBServerConnectorFactory.java,"@@ -169,18 +174,71 @@ public void run() {
+         } else {
+              // Start the connector server in the same thread.
+             connectorServer.start();
++            remoteServerStub = rmiServer.toStub();
+         }
+ 
+         if (LOG.isLoggable(Level.INFO)) {
+             LOG.info(""JMX connector server started: "" + connectorServer);
+         }
+     }
+ 
++    static int getRegistryPort(final String url) {
++        int serverStart = url.indexOf(""/jndi/rmi://"");
++        final String serverPart = url.substring(serverStart + 12);
++        int portStart = serverPart.indexOf(':') + 1;
++
++        int portEnd;
++        int port = 0;
++        if (portStart > 0) {
++            portEnd = indexNotOfNumber(serverPart, portStart);
++            if (portEnd > portStart) {
++                final String portString = serverPart.substring(portStart, portEnd);
++                port = Integer.parseInt(portString);
++            }
++        }
++        return port;
++    }
++
+     public void destroy() throws IOException {
+         connectorServer.stop();
+         if (LOG.isLoggable(Level.INFO)) {
+             LOG.info(""JMX connector server stopped: "" + connectorServer);
+         }
+     }
+ 
++    /*
++     * Better to use the internal API than re-invent the wheel.
++     */
++    @SuppressWarnings(""restriction"")
++    private class JmxRegistry extends sun.rmi.registry.RegistryImpl {
++        static final String LOOKUP_NAME = ""jmxrmi"";","[{'comment': ""I'm just wondering what happens if we define a URL that doesn't end with jmxrmi....shouldn't we take the lookup name from the serviceUrl?"", 'commenter': 'coheigea'}, {'comment': ""Good point. Let's see if we can do that in a smarter way."", 'commenter': 'jgallimore'}, {'comment': 'Hopefully done in the latest commit.', 'commenter': 'jgallimore'}, {'comment': 'Looks good thanks', 'commenter': 'coheigea'}]"
+641,rt/management/src/main/java/org/apache/cxf/management/jmx/MBServerConnectorFactory.java,"@@ -169,18 +176,85 @@ public void run() {
+         } else {
+              // Start the connector server in the same thread.
+             connectorServer.start();
++            remoteServerStub = rmiServer.toStub();
+         }
+ 
+         if (LOG.isLoggable(Level.INFO)) {
+             LOG.info(""JMX connector server started: "" + connectorServer);
+         }
+     }
+ 
++    static int getRegistryPort(final String url) {
++        int serverStart = url.indexOf(""/jndi/rmi://"");
++        final String serverPart = url.substring(serverStart + 12);
++        int portStart = serverPart.indexOf(':') + 1;
++
++        int portEnd;
++        int port = 0;
++        if (portStart > 0) {
++            portEnd = indexNotOfNumber(serverPart, portStart);
++            if (portEnd > portStart) {
++                final String portString = serverPart.substring(portStart, portEnd);
++                port = Integer.parseInt(portString);
++            }
++        }
++        return port;
++    }
++
++    public static String getBindingName(final JMXServiceURL jmxServiceURL) {","[{'comment': 'Could we make this protected? And add a test for it?', 'commenter': 'coheigea'}]"
+646,systests/rs-security/src/test/java/org/apache/cxf/systest/jaxrs/security/oidc/OIDCDynamicRegistrationTest.java,"@@ -237,17 +212,63 @@ public void testRegisterClientInitialAccessTokenCodeGrantTls() throws Exception
+         assertEquals(200, wc.delete().getStatus());
+     }
+ 
++    @org.junit.Test
++    public void testUpdateClient() throws Exception {","[{'comment': 'Could you add a test to make sure it\'s not possible to ""put"" (or delete actually, GET is already covered) without specifying an access token?', 'commenter': 'coheigea'}, {'comment': 'ok', 'commenter': 'amarkevich'}]"
+646,rt/rs/security/oauth-parent/oauth2/src/main/java/org/apache/cxf/rs/security/oauth2/utils/OAuthUtils.java,"@@ -429,6 +429,6 @@ public static SignatureAlgorithm getClientSecretSignatureAlgorithm(Properties si
+     }
+ 
+     public static String convertListOfScopesToString(List<String> registeredScopes) {
+-        return String.join("", "", registeredScopes);
++        return String.join("" "", registeredScopes);","[{'comment': ""What's the reason behind this change? "", 'commenter': 'coheigea'}, {'comment': 'https://tools.ietf.org/html/rfc7591#section-4.1.2\r\n\r\n>    o  Client Metadata Name: ""scope""\r\n>    o  Client Metadata Description: Space-separated list of OAuth 2.0\r\n>       scope values', 'commenter': 'amarkevich'}]"
+647,parent/pom.xml,"@@ -89,8 +89,8 @@
+         <cxf.atmosphere.version>2.5.2</cxf.atmosphere.version>
+         <cxf.bcprov.version>1.64</cxf.bcprov.version>
+         <cxf.brave.reporter.version>2.12.1</cxf.brave.reporter.version>
+-        <cxf.brave.version>5.9.4</cxf.brave.version>
+-        <cxf.brave.zipkin.version>2.19.3</cxf.brave.zipkin.version>
++        <cxf.brave.version>5.10.1</cxf.brave.version>
++        <cxf.brave.zipkin.version>2.20.1</cxf.brave.zipkin.version>","[{'comment': 'According to the parent pom for 5.10.1, the Zipkin version is still 2.19.3, so I guess we should stay aligned with that: https://repo.maven.apache.org/maven2/io/zipkin/brave/brave-parent/5.10.1/brave-parent-5.10.1.pom', 'commenter': 'coheigea'}, {'comment': ""it doesn't matter, but no problem reverting to that."", 'commenter': 'codefromthecrypt'}]"
+652,rt/rs/security/oauth-parent/oauth2/src/main/java/org/apache/cxf/rs/security/oauth2/filters/JwsJwksJwtAccessTokenValidator.java,"@@ -0,0 +1,106 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements. See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership. The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License. You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied. See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.cxf.rs.security.oauth2.filters;
++
++import java.util.Collections;
++import java.util.HashSet;
++import java.util.Map;
++import java.util.Objects;
++import java.util.Set;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.function.Predicate;
++
++import javax.ws.rs.core.MediaType;
++
++import org.apache.cxf.jaxrs.client.WebClient;
++import org.apache.cxf.rs.security.jose.jaxrs.JsonWebKeysProvider;
++import org.apache.cxf.rs.security.jose.jwk.JsonWebKey;
++import org.apache.cxf.rs.security.jose.jwk.JsonWebKeys;
++import org.apache.cxf.rs.security.jose.jwk.PublicKeyUse;
++import org.apache.cxf.rs.security.jose.jws.JwsHeaders;
++import org.apache.cxf.rs.security.jose.jws.JwsSignatureVerifier;
++import org.apache.cxf.rs.security.jose.jws.JwsUtils;
++","[{'comment': 'Can you add some javadoc explaining what the new validator is doing?', 'commenter': 'coheigea'}]"
+652,rt/rs/security/oauth-parent/oauth2/src/main/java/org/apache/cxf/rs/security/oauth2/filters/JwsJwksJwtAccessTokenValidator.java,"@@ -0,0 +1,106 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements. See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership. The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License. You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied. See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.cxf.rs.security.oauth2.filters;
++
++import java.util.Collections;
++import java.util.HashSet;
++import java.util.Map;
++import java.util.Objects;
++import java.util.Set;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.function.Predicate;
++
++import javax.ws.rs.core.MediaType;
++
++import org.apache.cxf.jaxrs.client.WebClient;
++import org.apache.cxf.rs.security.jose.jaxrs.JsonWebKeysProvider;
++import org.apache.cxf.rs.security.jose.jwk.JsonWebKey;
++import org.apache.cxf.rs.security.jose.jwk.JsonWebKeys;
++import org.apache.cxf.rs.security.jose.jwk.PublicKeyUse;
++import org.apache.cxf.rs.security.jose.jws.JwsHeaders;
++import org.apache.cxf.rs.security.jose.jws.JwsSignatureVerifier;
++import org.apache.cxf.rs.security.jose.jws.JwsUtils;
++
++public class JwsJwksJwtAccessTokenValidator extends JwtAccessTokenValidator {
++
++    final Map<String, JwkHolder> jsonWebKeys = new ConcurrentHashMap<>();
++
++    private String jwksURL;
++
++    @Override
++    protected JwsSignatureVerifier getInitializedSignatureVerifier(JwsHeaders jwsHeaders) {
++        Objects.requireNonNull(jwsHeaders.getKeyId());
++        return jsonWebKeys.computeIfAbsent(jwsHeaders.getKeyId(), keyId -> updateJwk(keyId)).getJwsSignatureVerifier();
++    }
++
++    public void setJwksURL(String jwksURL) {
++        this.jwksURL = jwksURL;
++    }
++
++    @Override
++    public void setJwsVerifier(JwsSignatureVerifier theJwsVerifier) {
++        throw new IllegalArgumentException(""Actual JwsSignatureVerifier will be populated from the JWK Set URL"");
++    }
++
++    private JwkHolder updateJwk(String keyId) {
++        Objects.requireNonNull(jwksURL, ""JWK Set URL must be specified"");
++        JwkHolder jwkHolder = null;
++        final Set<String> kids = new HashSet<>();
++        for (JsonWebKey jwk : getJsonWebKeys().getKeys()) {
++            if (PublicKeyUse.ENCRYPT != jwk.getPublicKeyUse()) {
++                final String kid = jwk.getKeyId();
++                kids.add(kid);
++                final JwkHolder h = new JwkHolder(jwk);
++                if (keyId.equals(kid)) {
++                    jwkHolder = h;
++                } else {
++                    jsonWebKeys.putIfAbsent(kid, h);","[{'comment': ""I find it hard to follow the logic in this method. Why is the JwkHolder added to jsonWebKeys for kid if the key ids don't match (and then removed on line 77?)"", 'commenter': 'coheigea'}, {'comment': 'added new jwk only; at L77 old keys removed\r\nthis case covered in JwsJwksJwtAccessTokenValidatorTest ', 'commenter': 'amarkevich'}]"
+652,systests/rs-security/src/test/java/org/apache/cxf/systest/jaxrs/security/oidc/filters/OIDCFiltersTest.java,"@@ -111,45 +101,6 @@ public void testClientCodeRequestFilter() throws Exception {
+         assertEquals(returnedBook.getId(), 123L);
+     }
+ 
+-    @org.junit.Test","[{'comment': 'Why is it being removed?', 'commenter': 'coheigea'}, {'comment': 'Initially this test was introduced exactly for AT signature validation using JWKS but its more complex to configure and do not support key rotation', 'commenter': 'amarkevich'}]"
+681,rt/features/logging/pom.xml,"@@ -38,6 +38,10 @@
+             <groupId>org.slf4j</groupId>
+             <artifactId>slf4j-api</artifactId>
+         </dependency>
++        <dependency>","[{'comment': 'maybe a bit overkill for the actual usage? IMHO it would be great to drop or reuse cxf utils.', 'commenter': 'rmannibucau'}, {'comment': 'Perhaps, I will check', 'commenter': 'ashakirin'}, {'comment': 'Agreed, there is no need to import it just for StringUtils.containsIgnoreCase', 'commenter': 'coheigea'}, {'comment': 'updated', 'commenter': 'ashakirin'}]"
+681,rt/features/logging/src/main/java/org/apache/cxf/ext/logging/MaskSensitiveHelper.java,"@@ -0,0 +1,74 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements. See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership. The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License. You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied. See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.cxf.ext.logging;
++
++import java.util.List;
++
++import org.apache.commons.lang3.StringUtils;
++import org.apache.cxf.message.Message;
++
++import static org.apache.commons.lang3.ObjectUtils.isEmpty;
++
++public class MaskSensitiveHelper {
++    private static final String ELEMENT_NAME_TEMPLATE = ""-ELEMENT_NAME-"";
++    private static final String MATCH_PATTERN_XML = ""<-ELEMENT_NAME->(.*?)</-ELEMENT_NAME->"";
++    private static final String MATCH_PATTERN_JSON = ""\""-ELEMENT_NAME-\""[ \\t]*:[ \\t]*\""(.*?)\"""";
++    private static final String REPLACEMENT_PATTERN_XML = ""<-ELEMENT_NAME->XXX</-ELEMENT_NAME->"";
++    private static final String REPLACEMENT_PATTERN_JSON = ""\""-ELEMENT_NAME-\"": \""XXX\"""";
++
++    private static final String XML_CONTENT = ""xml"";
++    private static final String HTML_CONTENT = ""html"";
++    private static final String JSON_CONTENT = ""json"";
++
++    final List<String> sensitiveElementNames;
++
++    public MaskSensitiveHelper(final List<String> sensitiveElementNames) {
++        this.sensitiveElementNames = sensitiveElementNames;
++    }
++
++    public String maskSensitiveElements(
++            final Message message,
++            final String originalLogString) {
++        if (isEmpty(sensitiveElementNames)) {
++            return originalLogString;
++        }
++        String contentType = (String) message.get(Message.CONTENT_TYPE);
++        if (StringUtils.containsIgnoreCase(contentType, XML_CONTENT)
++                || StringUtils.containsIgnoreCase(contentType, HTML_CONTENT)) {
++            return applyExpression(originalLogString, MATCH_PATTERN_XML, REPLACEMENT_PATTERN_XML);
++        } else if (StringUtils.containsIgnoreCase(contentType, JSON_CONTENT)) {
++            return applyExpression(originalLogString, MATCH_PATTERN_JSON, REPLACEMENT_PATTERN_JSON);
++        } else {
++            return originalLogString;
++        }
++    }
++
++    private String applyExpression(
++            final String originalLogString,
++            final String matchPatternTemplate,
++            final String replacementTemplate) {
++        String resultString = originalLogString;
++        for (final String elementName : sensitiveElementNames) {
++            final String matchPattern = matchPatternTemplate.replaceAll(ELEMENT_NAME_TEMPLATE, elementName);
++            final String replacement = replacementTemplate.replaceAll(ELEMENT_NAME_TEMPLATE, elementName);","[{'comment': ""Could we find a way to do this matching in the constructor so it doesn't have to be done every time the expression is evaluated? "", 'commenter': 'coheigea'}, {'comment': 'I made some measurements year ago - there are no real performance difference in modern java with or without pre-compiled patterns - it is automatically optimized. However I find code with replaceAll more readable as with pattern. Can change it, but win is minimal. WDYT?', 'commenter': 'ashakirin'}]"
+681,rt/features/logging/src/main/java/org/apache/cxf/ext/logging/AbstractLoggingInterceptor.java,"@@ -102,8 +110,12 @@ public void createExchangeId(Message message) {
+         }
+     }
+ 
+-    protected String transform(final String originalLogString) {
++    protected String transform(final Message message, final String originalLogString) {
+         return originalLogString;
+     }
+ 
++    protected String maskSensitiveElements(final Message message, String originalLogString) {
++        return (new MaskSensitiveHelper(sensitiveElementNames))","[{'comment': 'MaskSensitiveHelper is thread-safe, so it would be more performant only to create it once when sensitiveElementNames are set?', 'commenter': 'coheigea'}, {'comment': 'yes, it is make sense', 'commenter': 'ashakirin'}, {'comment': 'only the thing that can contradict: I would like to add sensitive http headers names as well, if new separate setter for headers names will be introduced, instantiation of helper will be weird, WDYT?', 'commenter': 'ashakirin'}, {'comment': ""But perhaps it doesn't make sense to introduce separate setters for elements and headers, user can just put them in the same list. Any opinions?"", 'commenter': 'ashakirin'}, {'comment': ""Ignore my last two comments - headers must be masked in DefaultLogEventMapper and shouldn't be set in MaskSensitiveHelper at all"", 'commenter': 'ashakirin'}]"
+681,rt/features/logging/src/main/java/org/apache/cxf/ext/logging/AbstractLoggingInterceptor.java,"@@ -73,6 +78,14 @@ public long getInMemThreshold() {
+         return threshold;
+     }
+ 
++    public void addSensitiveElementNames(final List<String> sensitiveElementNames) {
++        maskSensitiveHelper.addSensitiveElementNames(sensitiveElementNames);
++    }
++
++    public void addSensitiveHeaders(final List<String> sensitiveHeaders) {","[{'comment': 'Maybe rename to HTTPHeaders or ProtocolHeaders to make the meaning clear (as opposed to say SOAP headers)', 'commenter': 'coheigea'}, {'comment': 'ProtocolHeaders indeed make more sense. Other question if it makes sense to support masking sensitive SOAP headers as well?', 'commenter': 'ashakirin'}]"
+681,rt/features/logging/src/main/java/org/apache/cxf/ext/logging/AbstractLoggingInterceptor.java,"@@ -102,8 +115,13 @@ public void createExchangeId(Message message) {
+         }
+     }
+ 
+-    protected String transform(final String originalLogString) {
++    protected String transform(final Message message, final String originalLogString) {
+         return originalLogString;
+     }
+ 
++    protected String maskSensitiveElements(final Message message, String originalLogString) {
++        return Optional.of(maskSensitiveHelper)","[{'comment': 'Why Optional here when maskSensitiveHelper is declared as final?', 'commenter': 'coheigea'}, {'comment': ""Optional makes no sense anymore, stays from time, when maskSensitiveHelper was instantiated only by setter and wasn't final. Removed."", 'commenter': 'ashakirin'}]"
+681,rt/features/logging/src/main/java/org/apache/cxf/ext/logging/event/DefaultLogEventMapper.java,"@@ -95,6 +97,17 @@ public LogEvent map(Message message) {
+         return event;
+     }
+ 
++    private Map<String, String> maskHeaders(
++            final Map<String, String> headerMap,
++            final Map<String, Boolean> sensitiveHeaderMap) {
++        final Map<String, String> maskedHeaderMap = new HashMap<>();
++        headerMap.keySet().forEach(key -> {
++            maskedHeaderMap.put(key, sensitiveHeaderMap.containsKey(key)
++                    ? MASKED_HEADER_VALUE : headerMap.get(key));
++        });","[{'comment': ""It's probably more performant to use an entrySet here instead:\r\n\r\nheaderMap.entrySet().forEach(entry -> {\r\n            maskedHeaderMap.put(entry.getKey(), sensitiveHeaderMap.containsKey(entry.getKey())\r\n                    ? MASKED_HEADER_VALUE : entry.getValue());\r\n        });"", 'commenter': 'coheigea'}, {'comment': 'Have replaced List on Set for all arguments, makes more sense and it is performant', 'commenter': 'ashakirin'}]"
+681,rt/features/logging/src/main/java/org/apache/cxf/ext/logging/AbstractLoggingInterceptor.java,"@@ -73,6 +82,15 @@ public long getInMemThreshold() {
+         return threshold;
+     }
+ 
++    public void addSensitiveElementNames(final List<String> sensitiveElementNames) {
++        maskSensitiveHelper.addSensitiveElementNames(sensitiveElementNames);
++    }
++
++    public void addSensitiveProtocolHeaderNames(final List<String> sensitiveProtocolHeaderNames) {
++        sensitiveProtocolHeaderMap = sensitiveProtocolHeaderNames.stream()
++                .collect(Collectors.toMap(Function.identity(), name -> Boolean.TRUE));
++    }","[{'comment': ""Do we need to use a map here, as the boolean value isn't actually used anywhere that I can see?"", 'commenter': 'coheigea'}, {'comment': 'Yes, set will be enough, you are right', 'commenter': 'ashakirin'}]"
+681,rt/features/logging/src/main/java/org/apache/cxf/ext/logging/MaskSensitiveHelper.java,"@@ -0,0 +1,79 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements. See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership. The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License. You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied. See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.cxf.ext.logging;
++
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Optional;
++
++import org.apache.cxf.message.Message;
++
++public class MaskSensitiveHelper {
++    private static final String ELEMENT_NAME_TEMPLATE = ""-ELEMENT_NAME-"";
++    private static final String MATCH_PATTERN_XML = ""<-ELEMENT_NAME->(.*?)</-ELEMENT_NAME->"";
++    private static final String MATCH_PATTERN_JSON = ""\""-ELEMENT_NAME-\""[ \\t]*:[ \\t]*\""(.*?)\"""";
++    private static final String REPLACEMENT_PATTERN_XML = ""<-ELEMENT_NAME->XXX</-ELEMENT_NAME->"";
++    private static final String REPLACEMENT_PATTERN_JSON = ""\""-ELEMENT_NAME-\"": \""XXX\"""";
++
++    private static final String XML_CONTENT = ""xml"";
++    private static final String HTML_CONTENT = ""html"";
++    private static final String JSON_CONTENT = ""json"";
++
++    final List<String> sensitiveElementNames = new ArrayList<>();
++
++    public void addSensitiveElementNames(final List<String> inSensitiveElementNames) {
++        this.sensitiveElementNames.addAll(inSensitiveElementNames);
++    }
++
++    public String maskSensitiveElements(
++            final Message message,
++            final String originalLogString) {
++        if (sensitiveElementNames.isEmpty() || message == null) {
++            return originalLogString;
++        }
++        final String contentType = (String) message.get(Message.CONTENT_TYPE);
++        if (contentType.toLowerCase().contains(XML_CONTENT)
++                || contentType.toLowerCase().contains(HTML_CONTENT)) {
++            return applyMasks(originalLogString, MATCH_PATTERN_XML, REPLACEMENT_PATTERN_XML);
++        } else if (contentType.toLowerCase().contains(JSON_CONTENT)) {
++            return applyMasks(originalLogString, MATCH_PATTERN_JSON, REPLACEMENT_PATTERN_JSON);
++        }
++        return originalLogString;
++    }
++
++    private String applyMasks(String originalLogString, String matchElementPattern, String replacementElementPattern) {
++        return Optional.ofNullable(originalLogString)
++                .map(s -> applyExpression(s, matchElementPattern, replacementElementPattern, sensitiveElementNames))
++                .orElse(originalLogString);
++    }
++
++    private String applyExpression(
++            final String originalLogString,
++            final String matchPatternTemplate,
++            final String replacementTemplate,
++            final List<String> sensitiveNames) {
++        String resultString = originalLogString;
++        for (final String sensitiveName : sensitiveNames) {
++            final String matchPattern = matchPatternTemplate.replaceAll(ELEMENT_NAME_TEMPLATE, sensitiveName);
++            final String replacement = replacementTemplate.replaceAll(ELEMENT_NAME_TEMPLATE, sensitiveName);","[{'comment': 'Could we move this template replacement into the constructor? Maybe create a map of matchPattern -> replacement and iterate over this instead of sensitiveNames?', 'commenter': 'coheigea'}]"
+681,rt/features/logging/src/main/java/org/apache/cxf/ext/logging/MaskSensitiveHelper.java,"@@ -0,0 +1,79 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements. See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership. The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License. You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * ""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied. See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.cxf.ext.logging;
++
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Optional;
++
++import org.apache.cxf.message.Message;
++
++public class MaskSensitiveHelper {
++    private static final String ELEMENT_NAME_TEMPLATE = ""-ELEMENT_NAME-"";
++    private static final String MATCH_PATTERN_XML = ""<-ELEMENT_NAME->(.*?)</-ELEMENT_NAME->"";
++    private static final String MATCH_PATTERN_JSON = ""\""-ELEMENT_NAME-\""[ \\t]*:[ \\t]*\""(.*?)\"""";
++    private static final String REPLACEMENT_PATTERN_XML = ""<-ELEMENT_NAME->XXX</-ELEMENT_NAME->"";
++    private static final String REPLACEMENT_PATTERN_JSON = ""\""-ELEMENT_NAME-\"": \""XXX\"""";
++
++    private static final String XML_CONTENT = ""xml"";
++    private static final String HTML_CONTENT = ""html"";
++    private static final String JSON_CONTENT = ""json"";
++
++    final List<String> sensitiveElementNames = new ArrayList<>();
++
++    public void addSensitiveElementNames(final List<String> inSensitiveElementNames) {
++        this.sensitiveElementNames.addAll(inSensitiveElementNames);
++    }
++
++    public String maskSensitiveElements(
++            final Message message,
++            final String originalLogString) {
++        if (sensitiveElementNames.isEmpty() || message == null) {
++            return originalLogString;
++        }","[{'comment': 'Could we also return here if originalLogString is null + remove the Optional.ofNullable in applyMasks below?', 'commenter': 'coheigea'}]"
+684,rt/transports/http-netty/netty-client/src/main/java/org/apache/cxf/transport/http/netty/client/NettyHttpClientPipelineFactory.java,"@@ -42,18 +43,22 @@
+ 
+ public class NettyHttpClientPipelineFactory extends ChannelInitializer<Channel> {
+ 
++    public static final String MAX_CONTENT_LENGTH = ""org.apache.cxf.transport.http.netty.aggregator.maxContentLength"";
+     private static final Logger LOG =
+         LogUtils.getL7dLogger(NettyHttpClientPipelineFactory.class);
++
+     private final TLSClientParameters tlsClientParameters;
+     private final int readTimeout;
+-    
++    private final int maxContentLength;
++
+     public NettyHttpClientPipelineFactory(TLSClientParameters clientParameters) {
+         this(clientParameters, 0);
+     }
+ 
+     public NettyHttpClientPipelineFactory(TLSClientParameters clientParameters, int readTimeout) {
+         this.tlsClientParameters = clientParameters;
+         this.readTimeout = readTimeout;
++        this.maxContentLength = SystemPropertyAction.getInteger(MAX_CONTENT_LENGTH, 1048576);","[{'comment': 'I think it would be better to configure this in the same way as for readTimeout etc., by passing an int value through to this class, and in NettyHttpConduit checking the CXF Message for the value, e.g. see: https://github.com/apache/cxf/blob/b8e24192378aa2b9bd8110186673d8904f6237d5/rt/transports/http/src/main/java/org/apache/cxf/transport/http/HTTPConduit.java#L617', 'commenter': 'coheigea'}]"
+684,rt/transports/http/src/main/java/org/apache/cxf/transport/http/HTTPConduit.java,"@@ -652,6 +652,25 @@ protected static int determineConnectionTimeout(Message message,
+         return (int)ctimeout;
+     }
+ 
++    protected static int determineMaxResponseContentLength(Message message,
++                                                 HTTPClientPolicy csPolicy) {
++        Integer maxResponseContentLength = csPolicy.getMaxResponseContentLength();
++        if (message.get(Message.MAX_RESPONSE_CONTENT_LENGTH) != null) {
++            Object obj = message.get(Message.MAX_RESPONSE_CONTENT_LENGTH);
++            try {
++                maxResponseContentLength = Integer.parseInt(obj.toString());
++            } catch (NumberFormatException e) {
++                LOG.log(Level.WARNING, ""INVALID_TIMEOUT_FORMAT"", new Object[] {
++                    Message.MAX_RESPONSE_CONTENT_LENGTH, obj.toString()
++                });
++            }
++        }
++        if (maxResponseContentLength == null) {
++            maxResponseContentLength = Integer.MAX_VALUE;","[{'comment': 'We should probably default instead to 1048576, which was the previous default. Maybe extract this number to a constant.', 'commenter': 'coheigea'}, {'comment': 'change default to 1048576, extracted constant', 'commenter': 'vladikM'}]"
+684,core/src/main/java/org/apache/cxf/message/Message.java,"@@ -196,6 +196,12 @@
+      */
+     String THREAD_SAFE_STAX_FACTORIES = Message.class.getName() + "".THREAD_SAFE_STAX_FACTORIES"";
+ 
++
++    /**
++     * Integer property to specify how much bytes client must be able to handle.
++     */
++    String MAX_RESPONSE_CONTENT_LENGTH = Message.class.getName() + "".MAX_RESPONSE_CONTENT_LENGTH"";","[{'comment': ""I think it's probably better to restrict this configuration variable to Netty instead of the CXF Message object, as it only applies to Netty."", 'commenter': 'coheigea'}, {'comment': 'removed from Message', 'commenter': 'vladikM'}]"
+684,rt/transports/http/src/main/java/org/apache/cxf/transport/http/HTTPConduit.java,"@@ -652,6 +652,25 @@ protected static int determineConnectionTimeout(Message message,
+         return (int)ctimeout;
+     }
+ 
++    protected static int determineMaxResponseContentLength(Message message,","[{'comment': 'Move into Netty subclass.', 'commenter': 'coheigea'}, {'comment': 'moved', 'commenter': 'vladikM'}]"
+684,rt/transports/http/src/main/resources/schemas/wsdl/http-conf.xsd,"@@ -390,6 +390,13 @@
+                 </xs:documentation>
+             </xs:annotation>      
+         </xs:attribute>
++        <xs:attribute name=""MaxResponseContentLength"" type=""ptp:ParameterizedInt"" use=""optional"" >","[{'comment': ""I don't think this is required."", 'commenter': 'coheigea'}, {'comment': 'removed', 'commenter': 'vladikM'}]"
+684,rt/transports/http-netty/netty-client/src/main/java/org/apache/cxf/transport/http/netty/client/NettyHttpClientPipelineFactory.java,"@@ -44,16 +44,24 @@
+ 
+     private static final Logger LOG =
+         LogUtils.getL7dLogger(NettyHttpClientPipelineFactory.class);
++
+     private final TLSClientParameters tlsClientParameters;
+     private final int readTimeout;
+-    
++    private final int maxContentLength;
++
+     public NettyHttpClientPipelineFactory(TLSClientParameters clientParameters) {
+         this(clientParameters, 0);
+     }
+ 
+     public NettyHttpClientPipelineFactory(TLSClientParameters clientParameters, int readTimeout) {
++        this(clientParameters, readTimeout, 1048576);","[{'comment': 'Could we just refer to a single constant value (DEFAULT_MAX_RESPONSE_CONTENT_LENGTH)? ', 'commenter': 'coheigea'}, {'comment': 'replaced with constant', 'commenter': 'vladikM'}]"
+684,rt/transports/http-netty/netty-client/src/main/java/org/apache/cxf/transport/http/netty/client/NettyHttpConduit.java,"@@ -651,5 +660,24 @@ public void postShutdown() {
+     public void preShutdown() {
+     }
+ 
++    protected static int determineMaxResponseContentLength(Message message) {
++        Integer maxResponseContentLength = null;
++        if (message.get(MAX_RESPONSE_CONTENT_LENGTH) != null) {
++            Object obj = message.get(MAX_RESPONSE_CONTENT_LENGTH);
++            try {
++                maxResponseContentLength = Integer.parseInt(obj.toString());
++            } catch (NumberFormatException e) {
++                LOG.log(Level.WARNING, ""INVALID_TIMEOUT_FORMAT"", new Object[] {
++                    MAX_RESPONSE_CONTENT_LENGTH, obj.toString()
++                });
++            }
++        }
++        if (maxResponseContentLength == null) {
++            maxResponseContentLength = SystemPropertyAction.getInteger(MAX_RESPONSE_CONTENT_LENGTH,
++                DEFAULT_MAX_RESPONSE_CONTENT_LENGTH);
++        }","[{'comment': ""I don't think the system property is necessary, as determineConnection/ReceiveTimeout don't check it, only the message."", 'commenter': 'coheigea'}, {'comment': 'removed', 'commenter': 'vladikM'}]"
+688,core/src/test/java/org/apache/cxf/attachment/AttachmentUtilTest.java,"@@ -122,4 +133,204 @@ public void testCreateContentID() throws Exception {
+         assertNotEquals(AttachmentUtil.createContentID(null), AttachmentUtil.createContentID(null));
+     }
+ 
++    private CachedOutputStream testSetStreamedAttachmentProperties(final String property, final Object value)
++            throws IOException {
++        return testSetStreamedAttachmentProperties(property, value, new CachedOutputStream());
++    }
++
++    private CachedOutputStream testSetStreamedAttachmentProperties(final String property, final Object value,
++            final CachedOutputStream cos) throws IOException {
++        Message message = new MessageImpl();
++        message.put(property, value);
++        AttachmentUtil.setStreamedAttachmentProperties(message, cos);
++
++        return cos;
++    }
++
++    @Test
++    public void bigIntAsAttachmentMemoryThreshold() throws IOException {
++        BigInteger bigInteger = new BigInteger(String.valueOf(Long.MAX_VALUE));
++        try (CachedOutputStream cos = testSetStreamedAttachmentProperties(
++                AttachmentDeserializer.ATTACHMENT_MEMORY_THRESHOLD, bigInteger)) {
++            assertEquals(bigInteger.longValue(), cos.getThreshold());
++        }
++        // Overflow long value
++        bigInteger = bigInteger.add(BigInteger.ONE);
++        try (CachedOutputStream cos = testSetStreamedAttachmentProperties(
++                AttachmentDeserializer.ATTACHMENT_MEMORY_THRESHOLD, bigInteger)) {
++            assertEquals(AttachmentDeserializer.THRESHOLD, cos.getThreshold());
++        }
++    }
++
++    @Test
++    public void longAsAttachmentMemoryThreshold() throws IOException {
++        try (CachedOutputStream cos = testSetStreamedAttachmentProperties(
++                AttachmentDeserializer.ATTACHMENT_MEMORY_THRESHOLD, Long.MAX_VALUE)) {
++            assertEquals(Long.MAX_VALUE, cos.getThreshold());
++        }
++    }
++
++    @Test
++    public void integerAsAttachmentMemoryThreshold() throws IOException {
++        try (CachedOutputStream cos = testSetStreamedAttachmentProperties(
++                AttachmentDeserializer.ATTACHMENT_MEMORY_THRESHOLD, Integer.MAX_VALUE)) {
++            assertEquals(Integer.MAX_VALUE, cos.getThreshold());
++        }
++    }
++
++    @Test
++    public void shortAsAttachmentMemoryThreshold() throws IOException {
++        try (CachedOutputStream cos = testSetStreamedAttachmentProperties(
++                AttachmentDeserializer.ATTACHMENT_MEMORY_THRESHOLD, Short.MAX_VALUE)) {
++            assertEquals(Short.MAX_VALUE, cos.getThreshold());
++        }
++    }
++
++    @Test
++    public void byteAsAttachmentMemoryThreshold() throws IOException {
++        try (CachedOutputStream cos = testSetStreamedAttachmentProperties(
++                AttachmentDeserializer.ATTACHMENT_MEMORY_THRESHOLD, Byte.MAX_VALUE)) {
++            assertEquals(Byte.MAX_VALUE, cos.getThreshold());
++        }
++    }
++
++    @Test
++    public void numberStringAsAttachmentMemoryThreshold() throws IOException {
++        try (CachedOutputStream cos = testSetStreamedAttachmentProperties(
++                AttachmentDeserializer.ATTACHMENT_MEMORY_THRESHOLD, ""12345"")) {
++            assertEquals(12345, cos.getThreshold());
++        }
++    }
++
++    @Test(expected = IOException.class)
++    public void nonNumberStringAsAttachmentMemoryThreshold() throws IOException {
++        try (CachedOutputStream cos = testSetStreamedAttachmentProperties(
++                AttachmentDeserializer.ATTACHMENT_MEMORY_THRESHOLD, ""test"")) {
++            // Will throw exception
++        }
++    }
++
++    @Test(expected = IOException.class)
++    public void objectAsAttachmentMemoryThreshold() throws IOException {
++        try (CachedOutputStream cos = testSetStreamedAttachmentProperties(
++                AttachmentDeserializer.ATTACHMENT_MEMORY_THRESHOLD, new Object())) {
++            // Will throw exception
++        }
++    }
++
++    @Test
++    public void bigIntAsAttachmentMaxSize() throws IOException {
++        CachedOutputStream cos = createMock(CachedOutputStream.class);
++        BigInteger bigInteger = new BigInteger(String.valueOf(Long.MAX_VALUE));
++        cos = testSetStreamedAttachmentProperties(AttachmentDeserializer.ATTACHMENT_MAX_SIZE, bigInteger, cos);
++        replay(cos);
++        cos.setMaxSize(bigInteger.longValue());
++        cos.setThreshold(102400L);
++        verify(cos);
++        // Overflow long value
++        bigInteger = bigInteger.add(BigInteger.ONE);
++        cos = createMock(CachedOutputStream.class);
++        cos = testSetStreamedAttachmentProperties(AttachmentDeserializer.ATTACHMENT_MAX_SIZE, bigInteger, cos);
++        replay(cos);
++        cos.setThreshold(102400L);
++        verify(cos);
++    }
++
++    @Test
++    public void longAsAttachmentMaxSize() throws IOException {
++        CachedOutputStream cos = createMock(CachedOutputStream.class);
++        cos = testSetStreamedAttachmentProperties(AttachmentDeserializer.ATTACHMENT_MAX_SIZE, Long.MAX_VALUE, cos);
++        replay(cos);
++        cos.setMaxSize(Long.MAX_VALUE);
++        cos.setThreshold(102400L);
++        verify(cos);
++    }
++
++    @Test
++    public void integerAsAttachmentMaxSize() throws IOException {
++        CachedOutputStream cos = createMock(CachedOutputStream.class);
++        cos = testSetStreamedAttachmentProperties(AttachmentDeserializer.ATTACHMENT_MAX_SIZE, Integer.MAX_VALUE, cos);
++        replay(cos);
++        cos.setMaxSize(Integer.MAX_VALUE);
++        cos.setThreshold(102400L);
++        verify(cos);
++    }
++
++    @Test
++    public void shortAsAttachmentMaxSize() throws IOException {
++        CachedOutputStream cos = createMock(CachedOutputStream.class);
++        cos = testSetStreamedAttachmentProperties(AttachmentDeserializer.ATTACHMENT_MAX_SIZE, Short.MAX_VALUE, cos);
++        replay(cos);
++        cos.setMaxSize(Short.MAX_VALUE);
++        cos.setThreshold(102400L);
++        verify(cos);
++    }
++
++    @Test
++    public void byteAsAttachmentMaxSize() throws IOException {
++        CachedOutputStream cos = createMock(CachedOutputStream.class);
++        cos = testSetStreamedAttachmentProperties(AttachmentDeserializer.ATTACHMENT_MAX_SIZE, Byte.MAX_VALUE, cos);
++        replay(cos);
++        cos.setMaxSize(Byte.MAX_VALUE);
++        cos.setThreshold(102400L);
++        verify(cos);
++    }
++
++    @Test
++    public void numberStringAsAttachmentMaxSize() throws IOException {
++        CachedOutputStream cos = createMock(CachedOutputStream.class);
++        cos = testSetStreamedAttachmentProperties(AttachmentDeserializer.ATTACHMENT_MAX_SIZE, ""12345"", cos);
++        replay(cos);
++        cos.setMaxSize(12345);
++        cos.setThreshold(102400L);
++        verify(cos);
++    }
++
++    @Test(expected = IOException.class)
++    public void nonNumberStringAsAttachmentMaxSize() throws IOException {
++        try (CachedOutputStream cos = testSetStreamedAttachmentProperties(AttachmentDeserializer.ATTACHMENT_MAX_SIZE,
++                ""test"")) {
++            // Will throw exception
++        }
++    }
++
++    @Test(expected = IOException.class)
++    public void objectAsAttachmentMaxSize() throws IOException {
++        try (CachedOutputStream cos = testSetStreamedAttachmentProperties(AttachmentDeserializer.ATTACHMENT_MAX_SIZE,
++                new Object())) {
++            // Will throw exception
++        }
++    }
++
++    @Test
++    public void fileAsAttachmentDirectory() throws IOException {
++        File attachmentDirectory = new File(""/dev/null"");
++        CachedOutputStream cos = createMock(CachedOutputStream.class);
++        cos = testSetStreamedAttachmentProperties(AttachmentDeserializer.ATTACHMENT_DIRECTORY, attachmentDirectory,
++                cos);
++        replay(cos);
++        cos.setOutputDir(attachmentDirectory);
++        cos.setThreshold(102400L);
++        verify(cos);
++    }
++
++    @Test
++    public void stringAsAttachmentDirectory() throws IOException {
++        String attachmentDirectory = ""/dev/null"";","[{'comment': ""Maybe for /dev/null we could instead just use something like Files.createTempDirectory instead - I'm not sure if the former would work properly on windows?"", 'commenter': 'coheigea'}, {'comment': ""As long as nobody want's to access the file this works on Windows. A File instance does not validate the path when creating it. "", 'commenter': 'theobisproject'}]"
+745,tools/wadlto/jaxrs/src/main/java/org/apache/cxf/tools/wadlto/jaxb/CustomizationParser.java,"@@ -118,8 +118,9 @@ private void addBinding(String bindingFile) throws XMLStreamException {
+ 
+         Element root = null;
+         try {
+-            URIResolver resolver = new URIResolver(bindingFile);
+-            root = StaxUtils.read(resolver.getInputStream()).getDocumentElement();
++            try (URIResolver resolver = new URIResolver(bindingFile)) {","[{'comment': 'redundant inner try', 'commenter': 'amarkevich'}, {'comment': '👍 , fixed, thanks!', 'commenter': 'reta'}, {'comment': 'there are same changes in another places...', 'commenter': 'amarkevich'}, {'comment': 'Tried to address all of them, there are some places where I had to keep nested`try` structures since the exiting behavior (throw or return) would change.', 'commenter': 'reta'}]"
+745,tools/wsdlto/databinding/jaxb/src/main/java/org/apache/cxf/tools/wsdlto/databinding/jaxb/JAXBDataBinding.java,"@@ -1305,9 +1305,10 @@ private static String mapSchemaLocation(String target, String base, OASISCatalog
+ 
+ 
+         try {
+-            URIResolver resolver = new URIResolver(base, target);
+-            if (resolver.isResolved()) {
+-                target = resolver.getURI().toString();
++            try (URIResolver resolver = new URIResolver(base, target)) {","[{'comment': 'Do we really need to have a nested try statement here?', 'commenter': 'coheigea'}, {'comment': 'Nope, outer is enough, thanks!', 'commenter': 'reta'}]"
+745,core/src/main/java/org/apache/cxf/catalog/OASISCatalogManager.java,"@@ -100,10 +100,10 @@ public String getResolvedEntity(String publicId, String systemId) {
+                     String s = super.getResolvedEntity(publicId, systemId);
+                     if (s != null && s.startsWith(""classpath:"")) {
+                         try {
+-                            URIResolver r = new URIResolver(s);
+-                            if (r.isResolved()) {
+-                                r.getInputStream().close();
+-                                return r.getURL().toExternalForm();
++                            try (URIResolver r = new URIResolver(s)) {","[{'comment': 'Do we really need to have a nested try statement here?', 'commenter': 'coheigea'}, {'comment': 'No, not really in this case, simplified, thanks!', 'commenter': 'reta'}]"
+745,rt/frontend/simple/src/main/java/org/apache/cxf/endpoint/dynamic/DynamicClientFactory.java,"@@ -729,10 +729,10 @@ static void setupClasspath(StringBuilder classPath, ClassLoader classLoader)
+ 
+     private URL composeUrl(String s) {
+         try {
+-            URIResolver resolver = new URIResolver(null, s, getClass());
+-
+-            if (resolver.isResolved()) {
+-                return resolver.getURI().toURL();
++            try (URIResolver resolver = new URIResolver(null, s, getClass())) {","[{'comment': 'Can we remove the nested try statements here as well?', 'commenter': 'coheigea'}, {'comment': 'This one is a bit tricky since the `ServiceConstructionException` has to be thrown if URI is not resolved and not throwing any exceptions. I refactored it, please let me know what do you think.', 'commenter': 'reta'}]"
+927,rt/rs/security/oauth-parent/oauth2-saml/src/main/java/org/apache/cxf/rs/security/oauth2/saml/SamlOAuthValidator.java,"@@ -144,7 +145,7 @@ private void validateSubjectConfirmation(Message m,
+                                              SubjectConfirmationData subjectConfData) {
+         if (subjectConfData == null) {
+             if (!subjectConfirmationDataRequired
+-                && cs.getNotOnOrAfter() != null && !cs.getNotOnOrAfter().isBeforeNow()) {
++                && cs.getNotOnOrAfter() != null && !cs.getNotOnOrAfter().isBefore(Instant.now())) {","[{'comment': 'should there be an explicit timezone be specified instead of using the JVM default?', 'commenter': 'andrei-ivanov'}, {'comment': '@coheigea could you please address / clarify ^^ , thank you.', 'commenter': 'reta'}, {'comment': '@andrei-ivanov The previous code used https://www.joda.org/joda-time/apidocs/org/joda/time/DateTime.html#DateTime-- which uses the default time zone.', 'commenter': 'coheigea'}, {'comment': ""Well, maybe that was incorrect too, that's why I was hoping someone who knows better can verify"", 'commenter': 'andrei-ivanov'}, {'comment': ""@andrei-ivanov Instant.now() uses the System UTC clock, so I think it's correct - https://docs.oracle.com/javase/8/docs/api/java/time/Instant.html#now--"", 'commenter': 'coheigea'}, {'comment': 'Hmm, indeed... somehow I confused it with other `now()` calls with use the JVM default.\r\nSorry for the noise', 'commenter': 'andrei-ivanov'}, {'comment': ""Not at all, I'm happy to have someone review it."", 'commenter': 'coheigea'}]"
+927,services/pom.xml,"@@ -34,6 +34,16 @@
+         <module>sts</module>
+         <module>wsn</module>
+         <module>ws-discovery</module>
+-        <module>xkms</module>","[{'comment': ""@reta It's only xkms/itests that needs to be excluded, not the whole xkms module."", 'commenter': 'coheigea'}, {'comment': '👍 oops, sorry, fixed', 'commenter': 'reta'}]"
+960,core/src/main/java/org/apache/cxf/attachment/AttachmentUtil.java,"@@ -546,24 +546,40 @@ public static Attachment createMtomAttachmentFromDH(
+     }
+ 
+     public static DataSource getAttachmentDataSource(String contentId, Collection<Attachment> atts) {
+-        // Is this right? - DD
++        //
++        // RFC-2392 (https://datatracker.ietf.org/doc/html/rfc2392) says:
++        //
++        // A ""cid"" URL is converted to the corresponding Content-ID message
++        // header [MIME] by removing the ""cid:"" prefix, converting the % encoded
++        // character to their equivalent US-ASCII characters, and enclosing the
++        // remaining parts with an angle bracket pair, ""<"" and "">"".  
++        //
+         if (contentId.startsWith(""cid:"")) {
+             try {
+                 contentId = URLDecoder.decode(contentId.substring(4), StandardCharsets.UTF_8.name());
+             } catch (UnsupportedEncodingException ue) {
+                 contentId = contentId.substring(4);
+             }
+-            return loadDataSource(contentId, atts);
+-        } else if (contentId.indexOf(""://"") == -1) {
+-            return loadDataSource(contentId, atts);
+-        } else {
+-            try {
+-                return new URLDataSource(new URL(contentId));
+-            } catch (MalformedURLException e) {
+-                throw new Fault(e);
++            
++            // href attribute information item: MUST be a valid URI per the cid: URI scheme (RFC 2392), 
++            // for example:
++            //
++            //   <xop:Include xmlns:xop='http://www.w3.org/2004/08/xop/include' href='cid:http://example.org/me.png'/>
++            // 
++            // See please https://www.w3.org/TR/xop10/
++            //
++            if (contentId.indexOf(""://"") == -1) {
++                return loadDataSource(contentId, atts);
++            } else {
++                try {
++                    return new URLDataSource(new URL(contentId));
++                } catch (MalformedURLException e) {
++                    throw new Fault(e);
++                }","[{'comment': ""Hi Andriy, let's control this behavior with a system property, where it only allows to read message attachments by default."", 'commenter': 'coheigea'}]"
+960,core/src/main/java/org/apache/cxf/attachment/AttachmentUtil.java,"@@ -546,24 +550,46 @@ public static Attachment createMtomAttachmentFromDH(
+     }
+ 
+     public static DataSource getAttachmentDataSource(String contentId, Collection<Attachment> atts) {
+-        // Is this right? - DD
++        //
++        // RFC-2392 (https://datatracker.ietf.org/doc/html/rfc2392) says:
++        //
++        // A ""cid"" URL is converted to the corresponding Content-ID message
++        // header [MIME] by removing the ""cid:"" prefix, converting the % encoded
++        // character to their equivalent US-ASCII characters, and enclosing the
++        // remaining parts with an angle bracket pair, ""<"" and "">"".  
++        //
+         if (contentId.startsWith(""cid:"")) {
+             try {
+                 contentId = URLDecoder.decode(contentId.substring(4), StandardCharsets.UTF_8.name());
+             } catch (UnsupportedEncodingException ue) {
+                 contentId = contentId.substring(4);
+             }
+-            return loadDataSource(contentId, atts);
+-        } else if (contentId.indexOf(""://"") == -1) {
+-            return loadDataSource(contentId, atts);
+-        } else {
+-            try {
+-                return new URLDataSource(new URL(contentId));
+-            } catch (MalformedURLException e) {
+-                throw new Fault(e);
++            
++            // href attribute information item: MUST be a valid URI per the cid: URI scheme (RFC 2392), 
++            // for example:
++            //
++            //   <xop:Include xmlns:xop='http://www.w3.org/2004/08/xop/include' href='cid:http://example.org/me.png'/>
++            // 
++            // See please https://www.w3.org/TR/xop10/
++            //
++            if (contentId.indexOf(""://"") == -1) {
++                return loadDataSource(contentId, atts);
++            } else {
++                try {
++                    final String followUrls = SystemPropertyAction
++                        .getProperty(ATTACHMENT_XOP_FOLLOW_URLS_PROPERTY, ""false"");
++                    if (""true"".equals(followUrls)) {","[{'comment': 'Maybe use Boolean.valueOf(followUrls) instead to allow for someone setting ""True""?', 'commenter': 'coheigea'}, {'comment': 'Certainly, thanks @coheigea , changed', 'commenter': 'reta'}, {'comment': 'Did you push the update @reta ?\r\nAlso this test is failing for me:\r\n\r\n[ERROR] Failures:\r\n[ERROR]   MtomServerTest.testURLBasedAttachment:196 expected:<1> but was:<0>\r\n[INFO]', 'commenter': 'coheigea'}, {'comment': 'Oops, sorry, just did @coheigea (was fixing exactly this test)', 'commenter': 'reta'}]"
+1473,systests/ws-security/src/test/resources/org/apache/cxf/systest/ws/ut/plaintext-pass-policy.xml,"@@ -2,27 +2,6 @@
+ <wsp:Policy xmlns:wsu=""http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"" xmlns:wsp=""http://www.w3.org/ns/ws-policy"" wsu:Id=""TransportUsernameTokenPolicy"">
+     <wsp:ExactlyOne>
+         <wsp:All>","[{'comment': ""Couldn't we add a new policy rather that modifying an existing testcase?"", 'commenter': 'coheigea'}, {'comment': 'Hi @coheigea,\r\n\r\nSure, I will add a new testcase with new policy file to expose this problem.\r\n\r\nThanks for the comments!\r\n\r\nFreeman', 'commenter': 'ffang'}, {'comment': 'Hi @coheigea,\r\n\r\nRevised testcase accordingly.\r\n\r\nCheers\r\nFreeman', 'commenter': 'ffang'}]"
