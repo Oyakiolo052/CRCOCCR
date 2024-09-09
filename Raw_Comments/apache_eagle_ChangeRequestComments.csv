@@ -1,0 +1,390 @@
+Pull,Path,Diff_hunk,Comment
+451,eagle-jpm/eagle-hadoop-queue/src/main/java/org/apache/eagle/hadoop/queue/model/scheduler/Queue.java,"@@ -24,7 +24,6 @@
+ @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
+ @JsonIgnoreProperties(ignoreUnknown = true)
+ public class Queue {
+-    private String type;","[{'comment': 'can you comment this field rather than removing it, also adding the explanation I provided in the EAGLE-561 ? that would be helpful.\n', 'commenter': 'jhsenjaliya'}]"
+606,eagle-security/eagle-security-oozie-auditlog/src/main/java/org/apache/eagle/security/oozie/parse/OozieAuditLogAppProvider.java,"@@ -0,0 +1,13 @@
++package org.apache.eagle.security.oozie.parse;","[{'comment': 'Missing license header\n', 'commenter': 'haoch'}, {'comment': ""I'm going to fix it.\n"", 'commenter': 'denglingang'}]"
+606,eagle-security/eagle-security-oozie-auditlog/src/main/resources/META-INF/providers/org.apache.eagle.security.oozie.parse.OozieAuditLogAppProvider.xml,"@@ -0,0 +1,250 @@
++<?xml version=""1.0"" encoding=""UTF-8"" ?>
++<!--
++  ~ Licensed to the Apache Software Foundation (ASF) under one or more
++  ~ contributor license agreements.  See the NOTICE file distributed with
++  ~ this work for additional information regarding copyright ownership.
++  ~ The ASF licenses this file to You under the Apache License, Version 2.0
++  ~ (the ""License""); you may not use this file except in compliance with
++  ~ the License.  You may obtain a copy of the License at
++  ~
++  ~    http://www.apache.org/licenses/LICENSE-2.0
++  ~
++  ~ Unless required by applicable law or agreed to in writing, software
++  ~ distributed under the License is distributed on an ""AS IS"" BASIS,
++  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++  ~ See the License for the specific language governing permissions and
++  ~ limitations under the License.
++  -->
++
++<application>
++    <type>OOZIE_AUDIT_LOG_MONITOR</type>
++    <name>Oozie Audit Log Monitor</name>
++    <version>0.5.0-incubating</version>
++    <appClass>org.apache.eagle.security.oozie.parse.OozieAuditLogApplication</appClass>
++    <configuration>
++        <!-- topology related configurations -->
++        <property>
++            <name>workers</name>
++            <displayName>workers</displayName>
++            <value>1</value>
++            <description>number of topology workers</description>
++        </property>
++        <property>
++            <name>topology.numOfJoinTasks</name>
++            <displayName>topology.numOfJoinTasks</displayName>","[{'comment': 'Please change `displayName` of all properties in configuration descriptor to **human-readable name**, for example:  topology.numOfJoinTasks -> ""Join Tasks Num""\n', 'commenter': 'haoch'}]"
+763,eagle-external/hadoop_jmx_collector/system_metric_collector.py,"@@ -0,0 +1,300 @@
++# !/usr/bin/python
++#
++# Licensed to the Apache Software Foundation (ASF) under one or more
++# contributor license agreements.  See the NOTICE file distributed with
++# this work for additional information regarding copyright ownership.
++# The ASF licenses this file to You under the Apache License, Version 2.0
++# (the ""License""); you may not use this file except in compliance with
++# the License.  You may obtain a copy of the License at
++#
++#    http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an ""AS IS"" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
++
++from metric_collector import MetricCollector, Runner
++import logging, socket, string, os, re, time
++
++
++class SystemMetricCollector(MetricCollector):
++    METRIC_PREFIX = ""system""
++    METRIC_NAME_EXCLUDE = re.compile(r""[\(|\)]"")
++
++    def run(self):
++        self.try_exec_func(
++            self.collect_cpu_metric,
++            self.collect_uptime_metric,
++            self.collect_memory_metric,
++            self.collect_loadavg_metric,
++            self.collect_ipmi_cpu_temp,
++            self.collect_nic_metric,
++            self.collect_smartdisk_metric,
++            self.collect_diskstat_metric
++        )
++
++    def try_exec_func(self, *funcs):
++        for func in funcs:
++            try:
++                logging.info(""Executing: %s"", func.__name__)
++                func()
++            except Exception as e:
++                logging.warn(""Failed to execute: %s"", func.__name__)
++                logging.exception(e)
++
++    # ====================================
++    # CPU Usage
++    # ====================================
++
++    def collect_cpu_metric(self):
++        cpu_metric = self.new_metric()
++        cpu_info = os.popen('cat /proc/stat').readlines()
++        demension = [""cpu"", ""user"", ""nice"", ""system"", ""idle"", ""wait"", ""irq"", ""softirq"", ""steal"", ""guest""]
++
++        total_cpu = 0
++        total_cpu_usage = 0
++        cpu_stat_pre = None
++
++        data_dir = ""/tmp/eagle_cpu_stat_previous""
++        if os.path.exists(data_dir):
++            fd = open(data_dir, ""r"")
++            cpu_stat_pre = fd.read()
++            fd.close()
++
++        for item in cpu_info:
++            if re.match(r'^cpu\d+', item) is None:
++                continue
++
++            items = re.split(""\s+"", item.strip())
++            demens = min(len(demension), len(items))
++            tuple = dict()","[{'comment': 'since tuple is data structure in python, should you name this something different ? like metric_info = dict() ?', 'commenter': 'jhsenjaliya'}, {'comment': 'Resolved as required', 'commenter': 'haoch'}]"
+763,eagle-external/hadoop_jmx_collector/system_metric_collector.py,"@@ -0,0 +1,300 @@
++# !/usr/bin/python
++#
++# Licensed to the Apache Software Foundation (ASF) under one or more
++# contributor license agreements.  See the NOTICE file distributed with
++# this work for additional information regarding copyright ownership.
++# The ASF licenses this file to You under the Apache License, Version 2.0
++# (the ""License""); you may not use this file except in compliance with
++# the License.  You may obtain a copy of the License at
++#
++#    http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an ""AS IS"" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
++
++from metric_collector import MetricCollector, Runner
++import logging, socket, string, os, re, time
++
++
++class SystemMetricCollector(MetricCollector):
++    METRIC_PREFIX = ""system""
++    METRIC_NAME_EXCLUDE = re.compile(r""[\(|\)]"")
++
++    def run(self):
++        self.try_exec_func(
++            self.collect_cpu_metric,
++            self.collect_uptime_metric,
++            self.collect_memory_metric,
++            self.collect_loadavg_metric,
++            self.collect_ipmi_cpu_temp,
++            self.collect_nic_metric,
++            self.collect_smartdisk_metric,
++            self.collect_diskstat_metric
++        )
++
++    def try_exec_func(self, *funcs):
++        for func in funcs:
++            try:
++                logging.info(""Executing: %s"", func.__name__)
++                func()
++            except Exception as e:
++                logging.warn(""Failed to execute: %s"", func.__name__)
++                logging.exception(e)
++
++    # ====================================
++    # CPU Usage
++    # ====================================
++
++    def collect_cpu_metric(self):
++        cpu_metric = self.new_metric()
++        cpu_info = os.popen('cat /proc/stat').readlines()
++        demension = [""cpu"", ""user"", ""nice"", ""system"", ""idle"", ""wait"", ""irq"", ""softirq"", ""steal"", ""guest""]
++
++        total_cpu = 0
++        total_cpu_usage = 0
++        cpu_stat_pre = None
++
++        data_dir = ""/tmp/eagle_cpu_stat_previous""","[{'comment': 'can we make this configurable ?', 'commenter': 'jhsenjaliya'}, {'comment': 'Resolved as suggested', 'commenter': 'haoch'}]"
+763,eagle-external/hadoop_jmx_collector/system_metric_collector.py,"@@ -0,0 +1,300 @@
++# !/usr/bin/python
++#
++# Licensed to the Apache Software Foundation (ASF) under one or more
++# contributor license agreements.  See the NOTICE file distributed with
++# this work for additional information regarding copyright ownership.
++# The ASF licenses this file to You under the Apache License, Version 2.0
++# (the ""License""); you may not use this file except in compliance with
++# the License.  You may obtain a copy of the License at
++#
++#    http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an ""AS IS"" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
++
++from metric_collector import MetricCollector, Runner
++import logging, socket, string, os, re, time
++
++
++class SystemMetricCollector(MetricCollector):
++    METRIC_PREFIX = ""system""
++    METRIC_NAME_EXCLUDE = re.compile(r""[\(|\)]"")
++
++    def run(self):
++        self.try_exec_func(
++            self.collect_cpu_metric,
++            self.collect_uptime_metric,
++            self.collect_memory_metric,
++            self.collect_loadavg_metric,
++            self.collect_ipmi_cpu_temp,
++            self.collect_nic_metric,
++            self.collect_smartdisk_metric,
++            self.collect_diskstat_metric
++        )
++
++    def try_exec_func(self, *funcs):
++        for func in funcs:
++            try:
++                logging.info(""Executing: %s"", func.__name__)
++                func()
++            except Exception as e:
++                logging.warn(""Failed to execute: %s"", func.__name__)
++                logging.exception(e)
++
++    # ====================================
++    # CPU Usage
++    # ====================================
++
++    def collect_cpu_metric(self):
++        cpu_metric = self.new_metric()
++        cpu_info = os.popen('cat /proc/stat').readlines()
++        demension = [""cpu"", ""user"", ""nice"", ""system"", ""idle"", ""wait"", ""irq"", ""softirq"", ""steal"", ""guest""]
++
++        total_cpu = 0
++        total_cpu_usage = 0
++        cpu_stat_pre = None
++
++        data_dir = ""/tmp/eagle_cpu_stat_previous""
++        if os.path.exists(data_dir):
++            fd = open(data_dir, ""r"")
++            cpu_stat_pre = fd.read()
++            fd.close()
++
++        for item in cpu_info:
++            if re.match(r'^cpu\d+', item) is None:
++                continue
++
++            items = re.split(""\s+"", item.strip())
++            demens = min(len(demension), len(items))
++            tuple = dict()
++            for i in range(1, demens):
++                tuple[demension[i]] = int(items[i])
++                cpu_metric['timestamp'] = int(round(time.time() * 1000))
++                cpu_metric['metric'] = self.METRIC_PREFIX + ""."" + 'cpu.' + demension[i]
++                cpu_metric['device'] = items[0]
++                cpu_metric['value'] = items[i]
++                self.collect(cpu_metric)
++
++            per_cpu_usage = tuple[""user""] + tuple[""nice""] + tuple[""system""] + tuple[""wait""] + tuple[""irq""] + tuple[
++                ""softirq""] + tuple[""steal""] + tuple[""guest""]
++            per_cpu_total = tuple[""user""] + tuple[""nice""] + tuple[""system""] + tuple[""idle""] + tuple[""wait""] + tuple[
++                ""irq""] + \
++                            tuple[""softirq""] + tuple[""steal""] + tuple[""guest""]
++            total_cpu += per_cpu_total
++            total_cpu_usage += per_cpu_usage
++
++            # system.cpu.usage
++            cpu_metric['timestamp'] = int(round(time.time() * 1000))
++            cpu_metric['metric'] = self.METRIC_PREFIX + ""."" + 'cpu.' + ""perusage""
++            cpu_metric['device'] = items[0]
++            cpu_metric['value'] = str(round(per_cpu_usage * 100.0 / per_cpu_total, 2))
++            self.collect(cpu_metric)
++
++        cup_stat_current = str(total_cpu_usage) + "" "" + str(total_cpu)","[{'comment': 'do you meant cpu_stat_current ?', 'commenter': 'jhsenjaliya'}, {'comment': ""In fact, it's current CPU usage: \r\n\r\n    Sum(Single CPU Usage) / Sum (Single CPU Total)\r\n\r\n"", 'commenter': 'haoch'}, {'comment': ""It's used to compare with previous cpu usage to get `system.cpu.totalusage`:\r\n\r\n   Total CPU Usage (system.cpu.totalusage) = (total_cpu_usage - pre_total_cpu_usage) / (total_cpu - pre_total_cpu) %"", 'commenter': 'haoch'}, {'comment': 'sure, i was trying to point at spelling, should it be _cpu_stat_current_ instead of _cup_stat_current_ ?', 'commenter': 'jhsenjaliya'}]"
+763,eagle-external/hadoop_jmx_collector/system_metric_collector.py,"@@ -0,0 +1,300 @@
++# !/usr/bin/python
++#
++# Licensed to the Apache Software Foundation (ASF) under one or more
++# contributor license agreements.  See the NOTICE file distributed with
++# this work for additional information regarding copyright ownership.
++# The ASF licenses this file to You under the Apache License, Version 2.0
++# (the ""License""); you may not use this file except in compliance with
++# the License.  You may obtain a copy of the License at
++#
++#    http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an ""AS IS"" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
++
++from metric_collector import MetricCollector, Runner
++import logging, socket, string, os, re, time
++
++
++class SystemMetricCollector(MetricCollector):
++    METRIC_PREFIX = ""system""
++    METRIC_NAME_EXCLUDE = re.compile(r""[\(|\)]"")
++
++    def run(self):
++        self.try_exec_func(
++            self.collect_cpu_metric,
++            self.collect_uptime_metric,
++            self.collect_memory_metric,
++            self.collect_loadavg_metric,
++            self.collect_ipmi_cpu_temp,
++            self.collect_nic_metric,
++            self.collect_smartdisk_metric,
++            self.collect_diskstat_metric
++        )
++
++    def try_exec_func(self, *funcs):
++        for func in funcs:
++            try:
++                logging.info(""Executing: %s"", func.__name__)
++                func()
++            except Exception as e:
++                logging.warn(""Failed to execute: %s"", func.__name__)
++                logging.exception(e)
++
++    # ====================================
++    # CPU Usage
++    # ====================================
++
++    def collect_cpu_metric(self):
++        cpu_metric = self.new_metric()
++        cpu_info = os.popen('cat /proc/stat').readlines()
++        demension = [""cpu"", ""user"", ""nice"", ""system"", ""idle"", ""wait"", ""irq"", ""softirq"", ""steal"", ""guest""]
++
++        total_cpu = 0
++        total_cpu_usage = 0
++        cpu_stat_pre = None
++
++        data_dir = ""/tmp/eagle_cpu_stat_previous""
++        if os.path.exists(data_dir):
++            fd = open(data_dir, ""r"")
++            cpu_stat_pre = fd.read()
++            fd.close()
++
++        for item in cpu_info:
++            if re.match(r'^cpu\d+', item) is None:
++                continue
++
++            items = re.split(""\s+"", item.strip())
++            demens = min(len(demension), len(items))
++            tuple = dict()
++            for i in range(1, demens):
++                tuple[demension[i]] = int(items[i])
++                cpu_metric['timestamp'] = int(round(time.time() * 1000))
++                cpu_metric['metric'] = self.METRIC_PREFIX + ""."" + 'cpu.' + demension[i]
++                cpu_metric['device'] = items[0]
++                cpu_metric['value'] = items[i]
++                self.collect(cpu_metric)
++
++            per_cpu_usage = tuple[""user""] + tuple[""nice""] + tuple[""system""] + tuple[""wait""] + tuple[""irq""] + tuple[
++                ""softirq""] + tuple[""steal""] + tuple[""guest""]
++            per_cpu_total = tuple[""user""] + tuple[""nice""] + tuple[""system""] + tuple[""idle""] + tuple[""wait""] + tuple[
++                ""irq""] + \
++                            tuple[""softirq""] + tuple[""steal""] + tuple[""guest""]
++            total_cpu += per_cpu_total
++            total_cpu_usage += per_cpu_usage","[{'comment': 'what is the difference between _per_cpu_total_  and _per_cpu_usage_  ? ', 'commenter': 'jhsenjaliya'}, {'comment': 'Data Source is:\r\n~~~\r\n[root@sandbox hadoop_jmx_collector]# cat /proc/stat\r\ncpu  328118 17 134709 9869983 3745 3100 23742 0 0\r\ncpu0 42170 1 17838 1224218 625 3058 3162 0 0\r\ncpu1 41435 1 16803 1233688 403 4 2772 0 0\r\ncpu2 42173 1 17059 1232358 582 6 2706 0 0\r\ncpu3 40543 1 16920 1234035 471 6 2879 0 0\r\ncpu4 41876 2 16936 1233251 456 6 2816 0 0\r\ncpu5 41248 1 16654 1234433 551 5 2664 0 0\r\ncpu6 41576 1 17046 1233823 335 5 2773 0 0\r\ncpu7 37094 5 15448 1244174 318 5 3965 0 0\r\nintr 24785791 145 7 0 0 0 0 0 0 0 0 0 0 112 0 473861 0 0 0 0 138240 350522 0 56 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\r\nctxt 34107972\r\nbtime 1483582077\r\nprocesses 154160\r\nprocs_running 2\r\nprocs_blocked 0\r\nsoftirq 26040264 0 8770210 51530 909146 474103 0 2 1651574 154427 14029272\r\n~~~\r\n\r\nMetric Definition:\r\n\r\n    Single CPU Used (per_cpu_usage) = user + nice + system + wait + irq + softirq + steal + guest\r\n    Single CPU Total (per_cpu_total)    = user + nice + system + idle + wait + irq + softirq + steal + guest\r\n    Single CPU Usage (%) = Single CPU Used (per_cpu_usage) / Single CPU Total (per_cpu_total) \r\n\r\n', 'commenter': 'haoch'}]"
+797,eagle-hadoop-metric/src/main/webapp/app/apps/hadoop_metric/index.js,"@@ -23,35 +23,35 @@
+ 	var hadoopMetricApp = register(['ngRoute', 'ngAnimate', 'ui.router', 'eagle.service']);
+ 
+ 	hadoopMetricApp.route(""HadoopMetric"", {
+-		url: ""/hadoopMetric?startTime&endTime"",
++		url: ""/Service/HBase/overview?startTime&endTime"",","[{'comment': 'I think ""/Service/HBase/overview"" should be ""/Services/HBase/overview""', 'commenter': 'r7raul1984'}]"
+797,eagle-hadoop-metric/src/main/webapp/app/apps/hadoop_metric/index.js,"@@ -23,35 +23,35 @@
+ 	var hadoopMetricApp = register(['ngRoute', 'ngAnimate', 'ui.router', 'eagle.service']);
+ 
+ 	hadoopMetricApp.route(""HadoopMetric"", {
+-		url: ""/hadoopMetric?startTime&endTime"",
++		url: ""/Services/HBase/overview?startTime&endTime"",","[{'comment': 'first letter use lower case.', 'commenter': 'zombieJ'}]"
+798,eagle-server/src/main/webapp/app/dev/public/js/app.js,"@@ -324,6 +324,22 @@ var app = {};
+ 			});
+ 
+ 			// ================================ Function ================================
++			// Get parent side bar navigation item class by submenu
++			$scope.getPNavClass = function (subportals) {","[{'comment': '`getPageNavClass` or `getPortalNavClass`? No need abbr.', 'commenter': 'zombieJ'}]"
+1003,eagle-core/eagle-common/src/test/java/org/apache/eagle/common/TestDateTimeUtil.java,"@@ -49,7 +49,7 @@ public void testRound2() {
+         cal.set(Calendar.MINUTE, 0);
+         cal.set(Calendar.SECOND, 0);
+         cal.set(Calendar.MILLISECOND, 0);
+-        Assert.assertEquals(tsInHour, cal.getTimeInMillis());
++//        Assert.assertEquals(tsInHour, cal.getTimeInMillis());","[{'comment': '@grainier Why remove this assertion?', 'commenter': 'haoch'}, {'comment': '@haoch, sorry, it was a mistake. When I tried to build, this failed intermittently (even with the master), so I commented it out. Reverted with 1240042', 'commenter': 'grainier'}]"

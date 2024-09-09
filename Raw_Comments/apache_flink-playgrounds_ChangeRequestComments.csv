@@ -1,0 +1,1868 @@
+Pull,Path,Diff_hunk,Comment
+13,table-walkthrough/src/main/java/org/apache/flink/playgrounds/spendreport/SpendReport.java,"@@ -0,0 +1,67 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an ""AS IS"" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.apache.flink.playgrounds.spendreport;
++
++import org.apache.flink.table.api.EnvironmentSettings;
++import org.apache.flink.table.api.Table;
++import org.apache.flink.table.api.TableEnvironment;
++import org.apache.flink.table.api.Tumble;
++
++import static org.apache.flink.table.api.Expressions.*;
++
++public class SpendReport {
++
++    public static Table report(Table rows) {
++        throw new UnimplementedException();
++    }
++
++    public static void main(String[] args) throws Exception {
++        EnvironmentSettings settings = EnvironmentSettings.newInstance().build();
++        TableEnvironment tEnv = TableEnvironment.create(settings);
++
++        tEnv.executeSql(""CREATE TABLE transactions (\n"" +","[{'comment': ""I went with SQL instead of the ConnectorDescriptors because there isn't one for JDBC and it looked strange to me mixing styles. "", 'commenter': 'sjwiesman'}, {'comment': 'going with SQL is the better approach right now, will do a full pass tomorrow', 'commenter': 'twalthr'}]"
+13,docker/data-generator/src/main/java/org/apache/flink/playground/datagen/Throttler.java,"@@ -0,0 +1,71 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an ""AS IS"" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.apache.flink.playground.datagen;
++
++final class Throttler {","[{'comment': 'nit: in regular Flink coding style we enforce a comment over every public class but having it over every class might be helpful', 'commenter': 'twalthr'}]"
+13,table-walkthrough/Dockerfile,"@@ -0,0 +1,46 @@
++################################################################################
++#  Licensed to the Apache Software Foundation (ASF) under one
++#  or more contributor license agreements.  See the NOTICE file
++#  distributed with this work for additional information
++#  regarding copyright ownership.  The ASF licenses this file
++#  to you under the Apache License, Version 2.0 (the
++#  ""License""); you may not use this file except in compliance
++#  with the License.  You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++#  Unless required by applicable law or agreed to in writing, software
++#  distributed under the License is distributed on an ""AS IS"" BASIS,
++#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++#  See the License for the specific language governing permissions and
++# limitations under the License.
++################################################################################
++
++FROM maven:3.6-jdk-8-slim AS builder
++
++COPY ./pom.xml /opt/pom.xml
++COPY ./src /opt/src
++RUN cd /opt; mvn clean install -Dmaven.test.skip
++
++FROM flink:1.11-SNAPSHOT-scala_2.11
++
++# Download connector libraries for snapshot version
++RUN wget -P /opt/flink/lib/ https://repository.apache.org/content/repositories/snapshots/org/apache/flink/flink-sql-connector-kafka_2.11/1.11-SNAPSHOT/flink-sql-connector-kafka_2.11-1.11-20200610.034108-152.jar; \
++    wget -P /opt/flink/lib/ https://repository.apache.org/content/repositories/snapshots/org/apache/flink/flink-connector-jdbc_2.11/1.11-SNAPSHOT/flink-connector-jdbc_2.11-1.11-20200610.033814-8.jar; \
++    wget -P /opt/flink/lib/ https://repository.apache.org/content/repositories/snapshots/org/apache/flink/flink-csv/1.11-SNAPSHOT/flink-csv-1.11-20200610.033438-153.jar; \
++    wget -P /opt/flink/lib/ https://repo.maven.apache.org/maven2/mysql/mysql-connector-java/8.0.19/mysql-connector-java-8.0.19.jar;
++
++
++# Download connector libraries
++#RUN wget -P /opt/flink/lib/ https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-connector-kafka_2.11/${FLINK_VERSION}/flink-sql-connector-kafka_2.11-${FLINK_VERSION}.jar; \
++#    wget -P /opt/flink/lib/ https://repo.maven.apache.org/maven2/org/apache/flink/flink-jdbc_2.11/${FLINK_VERSION}/flink-jdbc_2.11-${FLINK_VERSION}.jar; \
++#    wget -P /opt/flink/lib/ https://repo.maven.apache.org/maven2/org/apache/flink/flink-csv/${FLINK_VERSION}/flink-csv-${FLINK_VERSION}.jar; \
++#    wget -P /opt/flink/lib/ https://repo.maven.apache.org/maven2/mysql/mysql-connector-java/8.0.19/mysql-connector-java-8.0.19.jar;
++
++COPY --from=builder /opt/target/spend-report-*.jar /opt/flink/usrlib/spend-report.jar
++
++RUN echo ""execution.checkpointing.interval: 10s"" >> /opt/flink/conf/flink-conf.yaml; \
++    echo ""pipeline.object-reuse: true"" >> /opt/flink/conf/flink-conf.yaml; \
++    echo ""pipeline.time-characteristic: EventTime"" >> /opt/flink/conf/flink-conf.yaml; \
++    sed -i -e 's/taskmanager.memory.process.size: 1568m/taskmanager.memory.process.size: 1728m/g' /opt/flink/conf/flink-conf.yaml; \","[{'comment': 'are these two lines really necessary or copied from somewhere else?', 'commenter': 'twalthr'}, {'comment': ""I originally based this off your FF demo. I'll remove that. "", 'commenter': 'sjwiesman'}]"
+13,table-walkthrough/pom.xml,"@@ -0,0 +1,251 @@
++<!--
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++""License""); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++  http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing,
++software distributed under the License is distributed on an
++""AS IS"" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++KIND, either express or implied.  See the License for the
++specific language governing permissions and limitations
++under the License.
++-->
++<project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
++		 xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
++	<modelVersion>4.0.0</modelVersion>
++
++	<groupId>org.apache.flink</groupId>
++	<artifactId>spend-report</artifactId>
++	<version>1.0.0</version>
++	<packaging>jar</packaging>
++
++	<name>Flink Walkthrough Table Java</name>
++	<url>https://flink.apache.org</url>
++
++	<properties>
++		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
++		<flink.version>1.11-SNAPSHOT</flink.version>
++		<java.version>1.8</java.version>
++		<scala.binary.version>2.11</scala.binary.version>
++		<maven.compiler.source>${java.version}</maven.compiler.source>
++		<maven.compiler.target>${java.version}</maven.compiler.target>
++    </properties>
++
++	<repositories>
++		<repository>
++			<id>apache.snapshots</id>
++			<name>Apache Development Snapshot Repository</name>
++			<url>https://repository.apache.org/content/repositories/snapshots/</url>
++			<releases>
++				<enabled>false</enabled>
++			</releases>
++			<snapshots>
++				<enabled>true</enabled>
++			</snapshots>
++		</repository>
++	</repositories>
++
++	<dependencies>
++		<!-- These dependencies are provided, because they should not be packaged into the JAR file. -->
++        <dependency>
++            <groupId>org.apache.flink</groupId>
++            <artifactId>flink-table-api-java</artifactId>
++			<version>${flink.version}</version>
++			<scope>provided</scope>
++        </dependency>
++		<dependency>","[{'comment': 'nit: fix indention here and below', 'commenter': 'twalthr'}]"
+13,table-walkthrough/src/main/java/org/apache/flink/playgrounds/spendreport/SpendReport.java,"@@ -0,0 +1,67 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an ""AS IS"" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.apache.flink.playgrounds.spendreport;
++
++import org.apache.flink.table.api.EnvironmentSettings;
++import org.apache.flink.table.api.Table;
++import org.apache.flink.table.api.TableEnvironment;
++import org.apache.flink.table.api.Tumble;
++
++import static org.apache.flink.table.api.Expressions.*;
++
++public class SpendReport {
++
++    public static Table report(Table rows) {","[{'comment': 'call the variable `transactions`?', 'commenter': 'twalthr'}]"
+16,pyflink-walkthrough/docker-compose.yml,"@@ -0,0 +1,96 @@
++################################################################################
++#  Licensed to the Apache Software Foundation (ASF) under one
++#  or more contributor license agreements.  See the NOTICE file
++#  distributed with this work for additional information
++#  regarding copyright ownership.  The ASF licenses this file
++#  to you under the Apache License, Version 2.0 (the
++#  ""License""); you may not use this file except in compliance
++#  with the License.  You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++#  Unless required by applicable law or agreed to in writing, software
++#  distributed under the License is distributed on an ""AS IS"" BASIS,
++#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++#  See the License for the specific language governing permissions and
++# limitations under the License.
++################################################################################
++
++version: '2.1'
++services:
++  jobmanager:
++    build: .
++    image: pyflink/pyflink:1.11.0-scala_2.11
++    volumes:
++      - .:/opt/pyflink-walkthrough
++    hostname: ""jobmanager""
++    expose:
++      - ""6123""
++    ports:
++      - ""8081:8081""
++    command: jobmanager
++    environment:
++      - JOB_MANAGER_RPC_ADDRESS=jobmanager
++  taskmanager:
++    image: pyflink/pyflink:1.11.0-scala_2.11
++    volumes:
++    - .:/opt/pyflink-walkthrough
++    expose:
++      - ""6121""
++      - ""6122""
++    depends_on:
++      - jobmanager
++    command: taskmanager
++    links:
++      - jobmanager:jobmanager
++    environment:
++      - JOB_MANAGER_RPC_ADDRESS=jobmanager
++  zookeeper:
++    image: wurstmeister/zookeeper:3.4.6
++    ports:
++      - ""2181:2181""
++  kafka:
++    image: wurstmeister/kafka:2.12-2.2.1
++    ports:
++      - ""9092""
++    depends_on:
++      - zookeeper
++    environment:
++      HOSTNAME_COMMAND: ""route -n | awk '/UG[ \t]/{print $$2}'""
++      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
++      KAFKA_CREATE_TOPICS: ""payment_msg:1:1""
++    volumes:
++      - /var/run/docker.sock:/var/run/docker.sock
++  generator:
++    build: generator
++    image: generator:1.0
++    depends_on:
++      - kafka
++  elasticsearch:
++    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.0
++    environment:
++      - cluster.name=docker-cluster
++      - bootstrap.memory_lock=true
++      - ""ES_JAVA_OPTS=-Xms512m -Xmx512m""
++      - discovery.type=single-node
++    ports:
++      - ""9200:9200""
++      - ""9300:9300""
++    ulimits:
++      memlock:
++        soft: -1
++        hard: -1
++      nofile:
++        soft: 65536
++        hard: 65536
++  kibana:
++    image: docker.elastic.co/kibana/kibana:7.8.0
++    ports:
++      - ""5601:5601""
++    depends_on:
++      - elasticsearch
++  load-kibaba-dashboad:","[{'comment': '```suggestion\r\n  load-kibana-dashboard:\r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/payment_msg_proccessing.py,"@@ -0,0 +1,93 @@
++################################################################################
++#  Licensed to the Apache Software Foundation (ASF) under one
++#  or more contributor license agreements.  See the NOTICE file
++#  distributed with this work for additional information
++#  regarding copyright ownership.  The ASF licenses this file
++#  to you under the Apache License, Version 2.0 (the
++#  ""License""); you may not use this file except in compliance
++#  with the License.  You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++#  Unless required by applicable law or agreed to in writing, software
++#  distributed under the License is distributed on an ""AS IS"" BASIS,
++#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++#  See the License for the specific language governing permissions and
++# limitations under the License.
++################################################################################
++
++from pyflink.datastream import StreamExecutionEnvironment, TimeCharacteristic
++from pyflink.table import StreamTableEnvironment, DataTypes, EnvironmentSettings
++from pyflink.table.udf import udf
++
++
++provinces = (""Beijing"", ""Shanghai"", ""Hangzhou"", ""Shenzhen"", ""Jiangxi"", ""Chongqing"", ""Xizang"")
++
++
++@udf(input_types=[DataTypes.STRING()], result_type=DataTypes.STRING())
++def province_id_to_name(id):
++    return provinces[id]
++
++
++def log_processing():
++    env = StreamExecutionEnvironment.get_execution_environment()
++    env_settings = EnvironmentSettings.Builder().use_blink_planner().build()
++    t_env = StreamTableEnvironment.create(stream_execution_environment=env, environment_settings=env_settings)
++    t_env.get_config().get_configuration().set_boolean(""python.fn-execution.memory.managed"", True)
++
++    source_ddl = """"""
++            CREATE TABLE payment_msg(
++                createTime VARCHAR,
++                orderId BIGINT,
++                payAmount DOUBLE,
++                payPlatform INT,
++                provinceId INT
++            ) WITH (
++              'connector.type' = 'kafka',
++              'connector.version' = 'universal',
++              'connector.topic' = 'payment_msg',
++              'connector.properties.bootstrap.servers' = 'kafka:9092',
++              'connector.properties.group.id' = 'test_3',
++              'connector.startup-mode' = 'latest-offset',
++              'format.type' = 'json'
++            )
++            """"""
++
++    es_sink_ddl = """"""
++            CREATE TABLE es_sink (
++                province VARCHAR PRIMARY KEY,
++                pay_amount DOUBLE
++            ) with (
++                'connector.type' = 'elasticsearch',
++                'connector.version' = '7',
++                'connector.hosts' = 'http://elasticsearch:9200',
++                'connector.index' = 'platform_pay_amount_1',
++                'connector.document-type' = 'payment',
++                'update-mode' = 'upsert',
++                'connector.flush-on-checkpoint' = 'true',
++                'connector.key-delimiter' = '$',
++                'connector.key-null-literal' = 'n/a',
++                'connector.bulk-flush.max-size' = '42mb',
++                'connector.bulk-flush.max-actions' = '32',
++                'connector.bulk-flush.interval' = '1000',
++                'connector.bulk-flush.backoff.delay' = '1000',
++                'format.type' = 'json'
++            )
++    """"""
++
++    t_env.sql_update(source_ddl)
++    t_env.sql_update(es_sink_ddl)
++    t_env.register_function('province_id_to_name', province_id_to_name)
++
++    t_env.from_path(""payment_msg"") \
++        .select(""province_id_to_name(provinceId) as province, payAmount"") \
++        .group_by(""province"") \
++        .select(""province, sum(payAmount) as pay_amount"") \
++        .insert_into(""es_sink"")
++
++    t_env.execute(""payment_demo"")","[{'comment': '```suggestion\r\n    t_env.execute_sql(source_ddl)\r\n    t_env.execute_sql(es_sink_ddl)\r\n    t_env.register_function(\'province_id_to_name\', province_id_to_name)\r\n\r\n    t_env.from_path(""payment_msg"") \\\r\n        .select(""province_id_to_name(provinceId) as province, payAmount"") \\\r\n        .group_by(""province"") \\\r\n        .select(""province, sum(payAmount) as pay_amount"") \\\r\n        .execute_insert(""es_sink"")\r\n```', 'commenter': 'morsapaes'}, {'comment': 'Use 1.11 methods instead of the deprecated ones (tested).', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,102 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana. The environment is managed by Docker so that all you need is a docker on your computer.","[{'comment': '```suggestion\r\nIn this playground, you will learn how to build and run an end-to-end PyFlink pipeline for data analytics, covering the following steps:\r\n\r\n * Reading data from a Kafka source;\r\n * Creating and using a [UDF](https://ci.apache.org/projects/flink/flink-docs-release-1.11/dev/python/table-api-users-guide/udfs/python_udfs.html);\r\n * Performing a simple aggregation over the source data;\r\n * Writing the results to Elasticsearch and visualizing them in Kibana. \r\n \r\n The environment is based on Docker Compose, so the only requirement is that you have [Docker](https://docs.docker.com/get-docker/) installed in your machine.\r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,102 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana. The environment is managed by Docker so that all you need is a docker on your computer.
++
++- Kafka
++
++Kafka is used to store input data in this walkthrough. The script [generate_source_data.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/generate_source_data.py) is used to generate transaction data and writes into the payment_msg kafka topic. Each record includes 5 fields: 
++```text
++{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}
++```
++```text
++createTime: The creation time of the transaction. 
++orderId: The id of the current transaction.
++payAmount: The pay amount of the current transaction.
++payPlatform: The platform used to pay the order, pc or mobile.
++provinceId: The id of the province for the user. 
++```
++
++- Generator 
++
++A simple data generator is provided that continuously writes new records into Kafka. 
++You can use the following command to read data in kafka and check whether the data is generated correctly.","[{'comment': '```suggestion\r\nYou will be using Kafka to store sample input data about payment transactions. A simple data generator `[generate_source_data.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/generate_source_data.py)` is provided to continuously write new records to the `payment_msg` Kafka topic. Each record is structured as follows: \r\n\r\n`{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}`\r\n\r\n* `createTime`: The creation time of the transaction. \r\n* `orderId`: The ID of the current transaction.\r\n* `payAmount`: The pay amount of the current transaction.\r\n* `payPlatform`: The platform used to pay the order (pc or mobile).\r\n* `provinceId`: The ID of the province the user is located in. \r\n\r\nYou can use the following command to read data from the Kafka topic and check whether it\'s generated correctly:\r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,102 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana. The environment is managed by Docker so that all you need is a docker on your computer.
++
++- Kafka
++
++Kafka is used to store input data in this walkthrough. The script [generate_source_data.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/generate_source_data.py) is used to generate transaction data and writes into the payment_msg kafka topic. Each record includes 5 fields: 
++```text
++{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}
++```
++```text
++createTime: The creation time of the transaction. 
++orderId: The id of the current transaction.
++payAmount: The pay amount of the current transaction.
++payPlatform: The platform used to pay the order, pc or mobile.
++provinceId: The id of the province for the user. 
++```
++
++- Generator 
++
++A simple data generator is provided that continuously writes new records into Kafka. 
++You can use the following command to read data in kafka and check whether the data is generated correctly.
++
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++- PyFlink
++
++The transaction data is processed by a PyFlink job, [payment_msg_proccessing.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/payment_msg_proccessing.py). The job maps the province id to province name for better demonstration using a Python UDF and then sums the payment for each province using a group aggregate. ","[{'comment': '```suggestion\r\nThe transaction data will be processed with PyFlink using the Python script `[payment_msg_proccessing.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/payment_msg_proccessing.py)`. This script will first map the `provinceId` in the input records to its corresponding province name using a Python UDF, and then sum the transaction amount for each province using a group aggregate. \r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,102 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana. The environment is managed by Docker so that all you need is a docker on your computer.
++
++- Kafka
++
++Kafka is used to store input data in this walkthrough. The script [generate_source_data.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/generate_source_data.py) is used to generate transaction data and writes into the payment_msg kafka topic. Each record includes 5 fields: 
++```text
++{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}
++```
++```text
++createTime: The creation time of the transaction. 
++orderId: The id of the current transaction.
++payAmount: The pay amount of the current transaction.
++payPlatform: The platform used to pay the order, pc or mobile.
++provinceId: The id of the province for the user. 
++```
++
++- Generator 
++
++A simple data generator is provided that continuously writes new records into Kafka. 
++You can use the following command to read data in kafka and check whether the data is generated correctly.
++
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++- PyFlink
++
++The transaction data is processed by a PyFlink job, [payment_msg_proccessing.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/payment_msg_proccessing.py). The job maps the province id to province name for better demonstration using a Python UDF and then sums the payment for each province using a group aggregate. 
++
++- ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++- Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. We use it to visualize our processing results.","[{'comment': '```suggestion\r\nKibana is an open source data visualization dashboard for ElasticSearch. You will use it to visualize the results of your PyFlink pipeline.\r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,102 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana. The environment is managed by Docker so that all you need is a docker on your computer.
++
++- Kafka
++
++Kafka is used to store input data in this walkthrough. The script [generate_source_data.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/generate_source_data.py) is used to generate transaction data and writes into the payment_msg kafka topic. Each record includes 5 fields: 
++```text
++{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}
++```
++```text
++createTime: The creation time of the transaction. 
++orderId: The id of the current transaction.
++payAmount: The pay amount of the current transaction.
++payPlatform: The platform used to pay the order, pc or mobile.
++provinceId: The id of the province for the user. 
++```
++
++- Generator 
++
++A simple data generator is provided that continuously writes new records into Kafka. 
++You can use the following command to read data in kafka and check whether the data is generated correctly.
++
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++- PyFlink
++
++The transaction data is processed by a PyFlink job, [payment_msg_proccessing.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/payment_msg_proccessing.py). The job maps the province id to province name for better demonstration using a Python UDF and then sums the payment for each province using a group aggregate. 
++
++- ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++- Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. We use it to visualize our processing results.
++
++## Setup
++
++The pyflink-walkthrough requires a custom Docker image, as well as public images for Flink, Elasticsearch, Kafka, and ZooKeeper. 
++
++The [docker-compose.yaml](https://github.com/hequn8128/pyflink-walkthrough/blob/master/docker-compose.yml) file of the pyflink-walkthrough is located in the `pyflink-walkthrough` root directory.","[{'comment': '```suggestion\r\nAs mentioned, the environment for this walkthrough is based on Docker Compose; and uses a custom image to spin up Flink (JobManager+TaskManager), Kafka+Zookeeper, the data generator and Elasticsearch+Kibana containers.\r\n\r\nYou can find the [docker-compose.yaml](https://github.com/hequn8128/pyflink-walkthrough/blob/master/docker-compose.yml) file in the `pyflink-walkthrough` root directory.\r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,102 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana. The environment is managed by Docker so that all you need is a docker on your computer.
++
++- Kafka
++
++Kafka is used to store input data in this walkthrough. The script [generate_source_data.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/generate_source_data.py) is used to generate transaction data and writes into the payment_msg kafka topic. Each record includes 5 fields: 
++```text
++{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}
++```
++```text
++createTime: The creation time of the transaction. 
++orderId: The id of the current transaction.
++payAmount: The pay amount of the current transaction.
++payPlatform: The platform used to pay the order, pc or mobile.
++provinceId: The id of the province for the user. 
++```
++
++- Generator 
++
++A simple data generator is provided that continuously writes new records into Kafka. 
++You can use the following command to read data in kafka and check whether the data is generated correctly.
++
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++- PyFlink
++
++The transaction data is processed by a PyFlink job, [payment_msg_proccessing.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/payment_msg_proccessing.py). The job maps the province id to province name for better demonstration using a Python UDF and then sums the payment for each province using a group aggregate. 
++
++- ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++- Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. We use it to visualize our processing results.
++
++## Setup
++
++The pyflink-walkthrough requires a custom Docker image, as well as public images for Flink, Elasticsearch, Kafka, and ZooKeeper. 
++
++The [docker-compose.yaml](https://github.com/hequn8128/pyflink-walkthrough/blob/master/docker-compose.yml) file of the pyflink-walkthrough is located in the `pyflink-walkthrough` root directory.
++
++### Building the custom Docker image
++
++Build the Docker image by running","[{'comment': '```suggestion\r\nFirst, build the Docker image by running:\r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,102 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana. The environment is managed by Docker so that all you need is a docker on your computer.
++
++- Kafka
++
++Kafka is used to store input data in this walkthrough. The script [generate_source_data.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/generate_source_data.py) is used to generate transaction data and writes into the payment_msg kafka topic. Each record includes 5 fields: 
++```text
++{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}
++```
++```text
++createTime: The creation time of the transaction. 
++orderId: The id of the current transaction.
++payAmount: The pay amount of the current transaction.
++payPlatform: The platform used to pay the order, pc or mobile.
++provinceId: The id of the province for the user. 
++```
++
++- Generator 
++
++A simple data generator is provided that continuously writes new records into Kafka. 
++You can use the following command to read data in kafka and check whether the data is generated correctly.
++
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++- PyFlink
++
++The transaction data is processed by a PyFlink job, [payment_msg_proccessing.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/payment_msg_proccessing.py). The job maps the province id to province name for better demonstration using a Python UDF and then sums the payment for each province using a group aggregate. 
++
++- ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++- Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. We use it to visualize our processing results.
++
++## Setup
++
++The pyflink-walkthrough requires a custom Docker image, as well as public images for Flink, Elasticsearch, Kafka, and ZooKeeper. 
++
++The [docker-compose.yaml](https://github.com/hequn8128/pyflink-walkthrough/blob/master/docker-compose.yml) file of the pyflink-walkthrough is located in the `pyflink-walkthrough` root directory.
++
++### Building the custom Docker image","[{'comment': '```suggestion\r\n### Building the Docker image\r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,102 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana. The environment is managed by Docker so that all you need is a docker on your computer.
++
++- Kafka
++
++Kafka is used to store input data in this walkthrough. The script [generate_source_data.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/generate_source_data.py) is used to generate transaction data and writes into the payment_msg kafka topic. Each record includes 5 fields: 
++```text
++{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}
++```
++```text
++createTime: The creation time of the transaction. 
++orderId: The id of the current transaction.
++payAmount: The pay amount of the current transaction.
++payPlatform: The platform used to pay the order, pc or mobile.
++provinceId: The id of the province for the user. 
++```
++
++- Generator 
++
++A simple data generator is provided that continuously writes new records into Kafka. 
++You can use the following command to read data in kafka and check whether the data is generated correctly.
++
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++- PyFlink
++
++The transaction data is processed by a PyFlink job, [payment_msg_proccessing.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/payment_msg_proccessing.py). The job maps the province id to province name for better demonstration using a Python UDF and then sums the payment for each province using a group aggregate. 
++
++- ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++- Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. We use it to visualize our processing results.
++
++## Setup
++
++The pyflink-walkthrough requires a custom Docker image, as well as public images for Flink, Elasticsearch, Kafka, and ZooKeeper. 
++
++The [docker-compose.yaml](https://github.com/hequn8128/pyflink-walkthrough/blob/master/docker-compose.yml) file of the pyflink-walkthrough is located in the `pyflink-walkthrough` root directory.
++
++### Building the custom Docker image
++
++Build the Docker image by running
++
++```bash
++docker-compose build
++```
++
++### Starting the Playground
++
++Once you built the Docker image, run the following command to start the playground","[{'comment': '```suggestion\r\nOnce the Docker image build is complete, run the following command to start the playground:\r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,102 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana. The environment is managed by Docker so that all you need is a docker on your computer.
++
++- Kafka
++
++Kafka is used to store input data in this walkthrough. The script [generate_source_data.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/generate_source_data.py) is used to generate transaction data and writes into the payment_msg kafka topic. Each record includes 5 fields: 
++```text
++{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}
++```
++```text
++createTime: The creation time of the transaction. 
++orderId: The id of the current transaction.
++payAmount: The pay amount of the current transaction.
++payPlatform: The platform used to pay the order, pc or mobile.
++provinceId: The id of the province for the user. 
++```
++
++- Generator 
++
++A simple data generator is provided that continuously writes new records into Kafka. 
++You can use the following command to read data in kafka and check whether the data is generated correctly.
++
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++- PyFlink
++
++The transaction data is processed by a PyFlink job, [payment_msg_proccessing.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/payment_msg_proccessing.py). The job maps the province id to province name for better demonstration using a Python UDF and then sums the payment for each province using a group aggregate. 
++
++- ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++- Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. We use it to visualize our processing results.
++
++## Setup
++
++The pyflink-walkthrough requires a custom Docker image, as well as public images for Flink, Elasticsearch, Kafka, and ZooKeeper. 
++
++The [docker-compose.yaml](https://github.com/hequn8128/pyflink-walkthrough/blob/master/docker-compose.yml) file of the pyflink-walkthrough is located in the `pyflink-walkthrough` root directory.
++
++### Building the custom Docker image
++
++Build the Docker image by running
++
++```bash
++docker-compose build
++```
++
++### Starting the Playground
++
++Once you built the Docker image, run the following command to start the playground
++
++```bash
++docker-compose up -d
++```
++
++You can check if the playground was successfully started by accessing the WebUI of(You may need to wait about 1 min before all services come up.):","[{'comment': '```suggestion\r\nOne way of checking if the playground was successfully started is accessing some of the services exposed:\r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,102 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana. The environment is managed by Docker so that all you need is a docker on your computer.
++
++- Kafka
++
++Kafka is used to store input data in this walkthrough. The script [generate_source_data.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/generate_source_data.py) is used to generate transaction data and writes into the payment_msg kafka topic. Each record includes 5 fields: 
++```text
++{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}
++```
++```text
++createTime: The creation time of the transaction. 
++orderId: The id of the current transaction.
++payAmount: The pay amount of the current transaction.
++payPlatform: The platform used to pay the order, pc or mobile.
++provinceId: The id of the province for the user. 
++```
++
++- Generator 
++
++A simple data generator is provided that continuously writes new records into Kafka. 
++You can use the following command to read data in kafka and check whether the data is generated correctly.
++
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++- PyFlink
++
++The transaction data is processed by a PyFlink job, [payment_msg_proccessing.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/payment_msg_proccessing.py). The job maps the province id to province name for better demonstration using a Python UDF and then sums the payment for each province using a group aggregate. 
++
++- ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++- Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. We use it to visualize our processing results.
++
++## Setup
++
++The pyflink-walkthrough requires a custom Docker image, as well as public images for Flink, Elasticsearch, Kafka, and ZooKeeper. 
++
++The [docker-compose.yaml](https://github.com/hequn8128/pyflink-walkthrough/blob/master/docker-compose.yml) file of the pyflink-walkthrough is located in the `pyflink-walkthrough` root directory.
++
++### Building the custom Docker image
++
++Build the Docker image by running
++
++```bash
++docker-compose build
++```
++
++### Starting the Playground
++
++Once you built the Docker image, run the following command to start the playground
++
++```bash
++docker-compose up -d
++```
++
++You can check if the playground was successfully started by accessing the WebUI of(You may need to wait about 1 min before all services come up.):
++
++1. visiting Flink Web UI [http://localhost:8081](http://localhost:8081).
++2. visiting Elasticsearch [http://localhost:9200](http://localhost:9200).
++3. visiting Kibana [http://localhost:5601](http://localhost:5601).
++
++","[{'comment': '```suggestion\r\n**Note:** you may need to wait around 1 minute before all the services come up.\r\n\r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,102 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana. The environment is managed by Docker so that all you need is a docker on your computer.
++
++- Kafka
++
++Kafka is used to store input data in this walkthrough. The script [generate_source_data.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/generate_source_data.py) is used to generate transaction data and writes into the payment_msg kafka topic. Each record includes 5 fields: 
++```text
++{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}
++```
++```text
++createTime: The creation time of the transaction. 
++orderId: The id of the current transaction.
++payAmount: The pay amount of the current transaction.
++payPlatform: The platform used to pay the order, pc or mobile.
++provinceId: The id of the province for the user. 
++```
++
++- Generator 
++
++A simple data generator is provided that continuously writes new records into Kafka. 
++You can use the following command to read data in kafka and check whether the data is generated correctly.
++
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++- PyFlink
++
++The transaction data is processed by a PyFlink job, [payment_msg_proccessing.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/payment_msg_proccessing.py). The job maps the province id to province name for better demonstration using a Python UDF and then sums the payment for each province using a group aggregate. 
++
++- ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++- Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. We use it to visualize our processing results.
++
++## Setup
++
++The pyflink-walkthrough requires a custom Docker image, as well as public images for Flink, Elasticsearch, Kafka, and ZooKeeper. 
++
++The [docker-compose.yaml](https://github.com/hequn8128/pyflink-walkthrough/blob/master/docker-compose.yml) file of the pyflink-walkthrough is located in the `pyflink-walkthrough` root directory.
++
++### Building the custom Docker image
++
++Build the Docker image by running
++
++```bash
++docker-compose build
++```
++
++### Starting the Playground
++
++Once you built the Docker image, run the following command to start the playground
++
++```bash
++docker-compose up -d
++```
++
++You can check if the playground was successfully started by accessing the WebUI of(You may need to wait about 1 min before all services come up.):
++
++1. visiting Flink Web UI [http://localhost:8081](http://localhost:8081).
++2. visiting Elasticsearch [http://localhost:9200](http://localhost:9200).
++3. visiting Kibana [http://localhost:5601](http://localhost:5601).
++
++
++### Stopping the Playground
++
++To stop the playground, run the following command","[{'comment': '```suggestion\r\nTo stop the playground, run the following command:\r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,102 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana. The environment is managed by Docker so that all you need is a docker on your computer.
++
++- Kafka
++
++Kafka is used to store input data in this walkthrough. The script [generate_source_data.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/generate_source_data.py) is used to generate transaction data and writes into the payment_msg kafka topic. Each record includes 5 fields: 
++```text
++{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}
++```
++```text
++createTime: The creation time of the transaction. 
++orderId: The id of the current transaction.
++payAmount: The pay amount of the current transaction.
++payPlatform: The platform used to pay the order, pc or mobile.
++provinceId: The id of the province for the user. 
++```
++
++- Generator 
++
++A simple data generator is provided that continuously writes new records into Kafka. 
++You can use the following command to read data in kafka and check whether the data is generated correctly.
++
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++- PyFlink
++
++The transaction data is processed by a PyFlink job, [payment_msg_proccessing.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/payment_msg_proccessing.py). The job maps the province id to province name for better demonstration using a Python UDF and then sums the payment for each province using a group aggregate. 
++
++- ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++- Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. We use it to visualize our processing results.
++
++## Setup
++
++The pyflink-walkthrough requires a custom Docker image, as well as public images for Flink, Elasticsearch, Kafka, and ZooKeeper. 
++
++The [docker-compose.yaml](https://github.com/hequn8128/pyflink-walkthrough/blob/master/docker-compose.yml) file of the pyflink-walkthrough is located in the `pyflink-walkthrough` root directory.
++
++### Building the custom Docker image
++
++Build the Docker image by running
++
++```bash
++docker-compose build
++```
++
++### Starting the Playground
++
++Once you built the Docker image, run the following command to start the playground
++
++```bash
++docker-compose up -d
++```
++
++You can check if the playground was successfully started by accessing the WebUI of(You may need to wait about 1 min before all services come up.):
++
++1. visiting Flink Web UI [http://localhost:8081](http://localhost:8081).
++2. visiting Elasticsearch [http://localhost:9200](http://localhost:9200).
++3. visiting Kibana [http://localhost:5601](http://localhost:5601).
++
++
++### Stopping the Playground
++
++To stop the playground, run the following command
++
++```bash
++docker-compose down
++```
++
++
++## Run jobs","[{'comment': '```suggestion\r\n## Running the PyFlink Job\r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,102 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana. The environment is managed by Docker so that all you need is a docker on your computer.
++
++- Kafka
++
++Kafka is used to store input data in this walkthrough. The script [generate_source_data.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/generate_source_data.py) is used to generate transaction data and writes into the payment_msg kafka topic. Each record includes 5 fields: 
++```text
++{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}
++```
++```text
++createTime: The creation time of the transaction. 
++orderId: The id of the current transaction.
++payAmount: The pay amount of the current transaction.
++payPlatform: The platform used to pay the order, pc or mobile.
++provinceId: The id of the province for the user. 
++```
++
++- Generator 
++
++A simple data generator is provided that continuously writes new records into Kafka. 
++You can use the following command to read data in kafka and check whether the data is generated correctly.
++
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++- PyFlink
++
++The transaction data is processed by a PyFlink job, [payment_msg_proccessing.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/payment_msg_proccessing.py). The job maps the province id to province name for better demonstration using a Python UDF and then sums the payment for each province using a group aggregate. 
++
++- ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++- Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. We use it to visualize our processing results.
++
++## Setup
++
++The pyflink-walkthrough requires a custom Docker image, as well as public images for Flink, Elasticsearch, Kafka, and ZooKeeper. 
++
++The [docker-compose.yaml](https://github.com/hequn8128/pyflink-walkthrough/blob/master/docker-compose.yml) file of the pyflink-walkthrough is located in the `pyflink-walkthrough` root directory.
++
++### Building the custom Docker image
++
++Build the Docker image by running
++
++```bash
++docker-compose build
++```
++
++### Starting the Playground
++
++Once you built the Docker image, run the following command to start the playground
++
++```bash
++docker-compose up -d
++```
++
++You can check if the playground was successfully started by accessing the WebUI of(You may need to wait about 1 min before all services come up.):
++
++1. visiting Flink Web UI [http://localhost:8081](http://localhost:8081).
++2. visiting Elasticsearch [http://localhost:9200](http://localhost:9200).
++3. visiting Kibana [http://localhost:5601](http://localhost:5601).
++
++
++### Stopping the Playground
++
++To stop the playground, run the following command
++
++```bash
++docker-compose down
++```
++
++
++## Run jobs
++
++1. Submit the PyFlink job.
++```shell script
++$ docker-compose exec jobmanager ./bin/flink run -py /opt/pyflink-walkthrough/payment_msg_proccessing.py -d
++```
++
++2. Open [kibana ui](http://localhost:5601) and choose the dashboard: payment_dashboard","[{'comment': '```suggestion\r\n2. Navigate to the [Kibana UI](http://localhost:5601) and choose the pre-created dashboard `payment_dashboard`.\r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,102 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana. The environment is managed by Docker so that all you need is a docker on your computer.
++
++- Kafka
++
++Kafka is used to store input data in this walkthrough. The script [generate_source_data.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/generate_source_data.py) is used to generate transaction data and writes into the payment_msg kafka topic. Each record includes 5 fields: 
++```text
++{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}
++```
++```text
++createTime: The creation time of the transaction. 
++orderId: The id of the current transaction.
++payAmount: The pay amount of the current transaction.
++payPlatform: The platform used to pay the order, pc or mobile.
++provinceId: The id of the province for the user. 
++```
++
++- Generator 
++
++A simple data generator is provided that continuously writes new records into Kafka. 
++You can use the following command to read data in kafka and check whether the data is generated correctly.
++
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++- PyFlink
++
++The transaction data is processed by a PyFlink job, [payment_msg_proccessing.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/payment_msg_proccessing.py). The job maps the province id to province name for better demonstration using a Python UDF and then sums the payment for each province using a group aggregate. 
++
++- ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++- Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. We use it to visualize our processing results.
++
++## Setup
++
++The pyflink-walkthrough requires a custom Docker image, as well as public images for Flink, Elasticsearch, Kafka, and ZooKeeper. 
++
++The [docker-compose.yaml](https://github.com/hequn8128/pyflink-walkthrough/blob/master/docker-compose.yml) file of the pyflink-walkthrough is located in the `pyflink-walkthrough` root directory.
++
++### Building the custom Docker image
++
++Build the Docker image by running
++
++```bash
++docker-compose build
++```
++
++### Starting the Playground
++
++Once you built the Docker image, run the following command to start the playground
++
++```bash
++docker-compose up -d
++```
++
++You can check if the playground was successfully started by accessing the WebUI of(You may need to wait about 1 min before all services come up.):
++
++1. visiting Flink Web UI [http://localhost:8081](http://localhost:8081).
++2. visiting Elasticsearch [http://localhost:9200](http://localhost:9200).
++3. visiting Kibana [http://localhost:5601](http://localhost:5601).
++
++
++### Stopping the Playground
++
++To stop the playground, run the following command
++
++```bash
++docker-compose down
++```
++
++
++## Run jobs
++
++1. Submit the PyFlink job.
++```shell script
++$ docker-compose exec jobmanager ./bin/flink run -py /opt/pyflink-walkthrough/payment_msg_proccessing.py -d
++```
++
++2. Open [kibana ui](http://localhost:5601) and choose the dashboard: payment_dashboard
++
++![image](pic/dash_board.png)
++
++![image](pic/final.png)
++
++3. Stop PyFlink job:","[{'comment': '```suggestion\r\n3. Stop the PyFlink job:\r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,102 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana. The environment is managed by Docker so that all you need is a docker on your computer.
++
++- Kafka
++
++Kafka is used to store input data in this walkthrough. The script [generate_source_data.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/generate_source_data.py) is used to generate transaction data and writes into the payment_msg kafka topic. Each record includes 5 fields: 
++```text
++{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}
++```
++```text
++createTime: The creation time of the transaction. 
++orderId: The id of the current transaction.
++payAmount: The pay amount of the current transaction.
++payPlatform: The platform used to pay the order, pc or mobile.
++provinceId: The id of the province for the user. 
++```
++
++- Generator 
++
++A simple data generator is provided that continuously writes new records into Kafka. 
++You can use the following command to read data in kafka and check whether the data is generated correctly.
++
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++- PyFlink
++
++The transaction data is processed by a PyFlink job, [payment_msg_proccessing.py](https://github.com/hequn8128/pyflink-walkthrough/blob/master/payment_msg_proccessing.py). The job maps the province id to province name for better demonstration using a Python UDF and then sums the payment for each province using a group aggregate. 
++
++- ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++- Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. We use it to visualize our processing results.
++
++## Setup
++
++The pyflink-walkthrough requires a custom Docker image, as well as public images for Flink, Elasticsearch, Kafka, and ZooKeeper. 
++
++The [docker-compose.yaml](https://github.com/hequn8128/pyflink-walkthrough/blob/master/docker-compose.yml) file of the pyflink-walkthrough is located in the `pyflink-walkthrough` root directory.
++
++### Building the custom Docker image
++
++Build the Docker image by running
++
++```bash
++docker-compose build
++```
++
++### Starting the Playground
++
++Once you built the Docker image, run the following command to start the playground
++
++```bash
++docker-compose up -d
++```
++
++You can check if the playground was successfully started by accessing the WebUI of(You may need to wait about 1 min before all services come up.):
++
++1. visiting Flink Web UI [http://localhost:8081](http://localhost:8081).
++2. visiting Elasticsearch [http://localhost:9200](http://localhost:9200).
++3. visiting Kibana [http://localhost:5601](http://localhost:5601).
++
++
++### Stopping the Playground
++
++To stop the playground, run the following command
++
++```bash
++docker-compose down
++```
++
++
++## Run jobs
++
++1. Submit the PyFlink job.
++```shell script
++$ docker-compose exec jobmanager ./bin/flink run -py /opt/pyflink-walkthrough/payment_msg_proccessing.py -d
++```
++
++2. Open [kibana ui](http://localhost:5601) and choose the dashboard: payment_dashboard
++
++![image](pic/dash_board.png)
++
++![image](pic/final.png)
++
++3. Stop PyFlink job:
++
++Visit [http://localhost:8081/#/overview](http://localhost:8081/#/overview) , select the job and click `Cancle`.","[{'comment': '```suggestion\r\nVisit the Flink Web UI at [http://localhost:8081/#/overview](http://localhost:8081/#/overview), select the job and click `Cancel` on the upper right side.\r\n```', 'commenter': 'morsapaes'}]"
+16,pyflink-walkthrough/payment_msg_proccessing.py,"@@ -0,0 +1,93 @@
++################################################################################
++#  Licensed to the Apache Software Foundation (ASF) under one
++#  or more contributor license agreements.  See the NOTICE file
++#  distributed with this work for additional information
++#  regarding copyright ownership.  The ASF licenses this file
++#  to you under the Apache License, Version 2.0 (the
++#  ""License""); you may not use this file except in compliance
++#  with the License.  You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++#  Unless required by applicable law or agreed to in writing, software
++#  distributed under the License is distributed on an ""AS IS"" BASIS,
++#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++#  See the License for the specific language governing permissions and
++# limitations under the License.
++################################################################################
++
++from pyflink.datastream import StreamExecutionEnvironment, TimeCharacteristic
++from pyflink.table import StreamTableEnvironment, DataTypes, EnvironmentSettings
++from pyflink.table.udf import udf
++
++
++provinces = (""Beijing"", ""Shanghai"", ""Hangzhou"", ""Shenzhen"", ""Jiangxi"", ""Chongqing"", ""Xizang"")
++
++
++@udf(input_types=[DataTypes.STRING()], result_type=DataTypes.STRING())
++def province_id_to_name(id):
++    return provinces[id]
++
++
++def log_processing():
++    env = StreamExecutionEnvironment.get_execution_environment()
++    env_settings = EnvironmentSettings.Builder().use_blink_planner().build()","[{'comment': 'Does this need to be set, considering that the Blink planner is the default since 1.11?', 'commenter': 'morsapaes'}, {'comment': 'This could be remove to make the code simpler.', 'commenter': 'shuiqiangchen'}]"
+16,README.md,"@@ -15,6 +15,8 @@ Flink job. The playground is presented in detail in
+ 
+ * The **Table Walkthrough** (in the `table-walkthrough` folder) shows to use the Table API to build an analytics pipeline that reads streaming data from Kafka and writes results to MySQL, along with a real-time dashboard in Grafana. The walkthrough is presented in detail in [""Real Time Reporting with the Table API""](https://ci.apache.org/projects/flink/flink-docs-release-1.11/try-flink/table_api.html), which is part of the _Try Flink_ section of the Flink documentation.
+ 
++* The **PyFlink Walkthrough** (int the `pyflink-walkthrough` folder) guides you to learn about how to manage and run PyFlink Jobs. The pipeline of this walkthrough reads data from Kafka, performs aggregations and writes results to Elasticsearch visualized via Kibana.","[{'comment': '```suggestion\r\n* The **PyFlink Walkthrough** (in the `pyflink-walkthrough` folder) provides a complete example that uses the Python API, and guides you through the steps needed to run and manage PyFlink jobs. The pipeline used in this walkthrough reads data from Kafka, performs aggregations, and writes results to Elasticsearch that are visualized with Kibana.\r\n```', 'commenter': 'alpinegizmo'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,107 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to build and run an end-to-end PyFlink pipeline for data analytics, covering the following steps:
++
++* Reading data from a Kafka source;
++* Creating data using a [UDF](https://ci.apache.org/projects/flink/flink-docs-release-1.11/dev/python/table-api-users-guide/udfs/python_udfs.html);
++* Performing a simple aggregation over the source data;
++* Writing the results to Elasticsearch and visualizing them in Kibana.
++
++### Kafka
++You will be using Kafka to store sample input data about payment transactions. A simple data generator [generate_source_data.py](generator/generate_source_data.py) is provided to
++continuously write new records to the `payment_msg` Kafka topic. Each record is structured as follows:
++ 
++`{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}`
++
++* `createTime`: The creation time of the transaction. 
++* `orderId`: The id of the current transaction.
++* `payAmount`: The pay amount of the current transaction.","[{'comment': '```suggestion\r\n* `payAmount`: The amount being paid with this transaction.\r\n```', 'commenter': 'alpinegizmo'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,107 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to build and run an end-to-end PyFlink pipeline for data analytics, covering the following steps:
++
++* Reading data from a Kafka source;
++* Creating data using a [UDF](https://ci.apache.org/projects/flink/flink-docs-release-1.11/dev/python/table-api-users-guide/udfs/python_udfs.html);
++* Performing a simple aggregation over the source data;
++* Writing the results to Elasticsearch and visualizing them in Kibana.
++
++### Kafka
++You will be using Kafka to store sample input data about payment transactions. A simple data generator [generate_source_data.py](generator/generate_source_data.py) is provided to
++continuously write new records to the `payment_msg` Kafka topic. Each record is structured as follows:
++ 
++`{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}`
++
++* `createTime`: The creation time of the transaction. 
++* `orderId`: The id of the current transaction.
++* `payAmount`: The pay amount of the current transaction.
++* `payPlatform`: The platform used to pay the order, pc or mobile.","[{'comment': '```suggestion\r\n* `payPlatform`: The platform used to create this payment: pc or mobile.\r\n```', 'commenter': 'alpinegizmo'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,107 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to build and run an end-to-end PyFlink pipeline for data analytics, covering the following steps:
++
++* Reading data from a Kafka source;
++* Creating data using a [UDF](https://ci.apache.org/projects/flink/flink-docs-release-1.11/dev/python/table-api-users-guide/udfs/python_udfs.html);
++* Performing a simple aggregation over the source data;
++* Writing the results to Elasticsearch and visualizing them in Kibana.
++
++### Kafka
++You will be using Kafka to store sample input data about payment transactions. A simple data generator [generate_source_data.py](generator/generate_source_data.py) is provided to
++continuously write new records to the `payment_msg` Kafka topic. Each record is structured as follows:
++ 
++`{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}`
++
++* `createTime`: The creation time of the transaction. 
++* `orderId`: The id of the current transaction.
++* `payAmount`: The pay amount of the current transaction.
++* `payPlatform`: The platform used to pay the order, pc or mobile.
++* `provinceId`: The id of the province for the user. 
++
++You can use the following command to read data from the Kafka topic and check whether it's generated correctly:
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++### PyFlink
++
++The transaction data will be processed with PyFlink using the Python script [payment_msg_processing.py](payment_msg_proccessing.py).
++This script will first map the `provinceId` in the input records to its corresponding province name
++using a Python UDF, and them sum the transaction amount for each province using a group aggregate. ","[{'comment': '```suggestion\r\nusing a Python UDF, and then compute the sum of the transaction amounts for each province. \r\n```', 'commenter': 'alpinegizmo'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,107 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to build and run an end-to-end PyFlink pipeline for data analytics, covering the following steps:
++
++* Reading data from a Kafka source;
++* Creating data using a [UDF](https://ci.apache.org/projects/flink/flink-docs-release-1.11/dev/python/table-api-users-guide/udfs/python_udfs.html);
++* Performing a simple aggregation over the source data;
++* Writing the results to Elasticsearch and visualizing them in Kibana.
++
++### Kafka
++You will be using Kafka to store sample input data about payment transactions. A simple data generator [generate_source_data.py](generator/generate_source_data.py) is provided to
++continuously write new records to the `payment_msg` Kafka topic. Each record is structured as follows:
++ 
++`{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}`
++
++* `createTime`: The creation time of the transaction. 
++* `orderId`: The id of the current transaction.
++* `payAmount`: The pay amount of the current transaction.
++* `payPlatform`: The platform used to pay the order, pc or mobile.
++* `provinceId`: The id of the province for the user. 
++
++You can use the following command to read data from the Kafka topic and check whether it's generated correctly:
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++### PyFlink
++
++The transaction data will be processed with PyFlink using the Python script [payment_msg_processing.py](payment_msg_proccessing.py).
++This script will first map the `provinceId` in the input records to its corresponding province name
++using a Python UDF, and them sum the transaction amount for each province using a group aggregate. 
++
++### ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.","[{'comment': '```suggestion\r\nElasticSearch is used to store the results and to provide an efficient query service.\r\n```', 'commenter': 'alpinegizmo'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,107 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to build and run an end-to-end PyFlink pipeline for data analytics, covering the following steps:
++
++* Reading data from a Kafka source;
++* Creating data using a [UDF](https://ci.apache.org/projects/flink/flink-docs-release-1.11/dev/python/table-api-users-guide/udfs/python_udfs.html);
++* Performing a simple aggregation over the source data;
++* Writing the results to Elasticsearch and visualizing them in Kibana.
++
++### Kafka
++You will be using Kafka to store sample input data about payment transactions. A simple data generator [generate_source_data.py](generator/generate_source_data.py) is provided to
++continuously write new records to the `payment_msg` Kafka topic. Each record is structured as follows:
++ 
++`{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}`
++
++* `createTime`: The creation time of the transaction. 
++* `orderId`: The id of the current transaction.
++* `payAmount`: The pay amount of the current transaction.
++* `payPlatform`: The platform used to pay the order, pc or mobile.
++* `provinceId`: The id of the province for the user. 
++
++You can use the following command to read data from the Kafka topic and check whether it's generated correctly:
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++### PyFlink
++
++The transaction data will be processed with PyFlink using the Python script [payment_msg_processing.py](payment_msg_proccessing.py).
++This script will first map the `provinceId` in the input records to its corresponding province name
++using a Python UDF, and them sum the transaction amount for each province using a group aggregate. 
++
++### ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++### Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. You will use it to visualize 
++the results of your PyFlink pipeline.
++
++## Setup
++
++As mentioned, the environment for this walkthrough is based on Docker Compose; and uses a custom image
++to spin up Flink (JobManager+TaskManager), Kafka+Zookeeper, the data generator and Elasticsearch+Kibana
++containers.","[{'comment': '```suggestion\r\nAs mentioned, the environment for this walkthrough is based on Docker Compose. It uses a custom image\r\nto spin up Flink (JobManager+TaskManager), Kafka+Zookeeper, the data generator, and Elasticsearch+Kibana\r\ncontainers.\r\n```', 'commenter': 'alpinegizmo'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,107 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to build and run an end-to-end PyFlink pipeline for data analytics, covering the following steps:
++
++* Reading data from a Kafka source;
++* Creating data using a [UDF](https://ci.apache.org/projects/flink/flink-docs-release-1.11/dev/python/table-api-users-guide/udfs/python_udfs.html);
++* Performing a simple aggregation over the source data;
++* Writing the results to Elasticsearch and visualizing them in Kibana.
++
++### Kafka
++You will be using Kafka to store sample input data about payment transactions. A simple data generator [generate_source_data.py](generator/generate_source_data.py) is provided to
++continuously write new records to the `payment_msg` Kafka topic. Each record is structured as follows:
++ 
++`{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}`
++
++* `createTime`: The creation time of the transaction. 
++* `orderId`: The id of the current transaction.
++* `payAmount`: The pay amount of the current transaction.
++* `payPlatform`: The platform used to pay the order, pc or mobile.
++* `provinceId`: The id of the province for the user. 
++
++You can use the following command to read data from the Kafka topic and check whether it's generated correctly:
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++### PyFlink
++
++The transaction data will be processed with PyFlink using the Python script [payment_msg_processing.py](payment_msg_proccessing.py).
++This script will first map the `provinceId` in the input records to its corresponding province name
++using a Python UDF, and them sum the transaction amount for each province using a group aggregate. 
++
++### ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++### Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. You will use it to visualize 
++the results of your PyFlink pipeline.
++
++## Setup
++
++As mentioned, the environment for this walkthrough is based on Docker Compose; and uses a custom image
++to spin up Flink (JobManager+TaskManager), Kafka+Zookeeper, the data generator and Elasticsearch+Kibana
++containers.
++
++Your can find the [docker-compose.yaml](docker-compose.yml) file of the pyflink-walkthrough is located in the `pyflink-walkthrough` root directory.
++
++### Building the Docker image
++
++First, build the Docker image by running:
++
++```bash
++docker-compose build
++```
++
++### Starting the Playground
++
++Once the Docker image build is complete, run the following command to start the playground:
++
++```bash
++docker-compose up -d
++```
++
++One way of checking if the playground was successfully started is accessing some of the services exposed:","[{'comment': '```suggestion\r\nOne way of checking if the playground was successfully started is to access some of the services that are exposed:\r\n```', 'commenter': 'alpinegizmo'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,107 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to build and run an end-to-end PyFlink pipeline for data analytics, covering the following steps:
++
++* Reading data from a Kafka source;
++* Creating data using a [UDF](https://ci.apache.org/projects/flink/flink-docs-release-1.11/dev/python/table-api-users-guide/udfs/python_udfs.html);
++* Performing a simple aggregation over the source data;
++* Writing the results to Elasticsearch and visualizing them in Kibana.
++
++### Kafka
++You will be using Kafka to store sample input data about payment transactions. A simple data generator [generate_source_data.py](generator/generate_source_data.py) is provided to
++continuously write new records to the `payment_msg` Kafka topic. Each record is structured as follows:
++ 
++`{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}`
++
++* `createTime`: The creation time of the transaction. 
++* `orderId`: The id of the current transaction.
++* `payAmount`: The pay amount of the current transaction.
++* `payPlatform`: The platform used to pay the order, pc or mobile.
++* `provinceId`: The id of the province for the user. 
++
++You can use the following command to read data from the Kafka topic and check whether it's generated correctly:
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++### PyFlink
++
++The transaction data will be processed with PyFlink using the Python script [payment_msg_processing.py](payment_msg_proccessing.py).
++This script will first map the `provinceId` in the input records to its corresponding province name
++using a Python UDF, and them sum the transaction amount for each province using a group aggregate. 
++
++### ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++### Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. You will use it to visualize 
++the results of your PyFlink pipeline.
++
++## Setup
++
++As mentioned, the environment for this walkthrough is based on Docker Compose; and uses a custom image
++to spin up Flink (JobManager+TaskManager), Kafka+Zookeeper, the data generator and Elasticsearch+Kibana
++containers.
++
++Your can find the [docker-compose.yaml](docker-compose.yml) file of the pyflink-walkthrough is located in the `pyflink-walkthrough` root directory.
++
++### Building the Docker image
++
++First, build the Docker image by running:
++
++```bash
++docker-compose build
++```
++
++### Starting the Playground
++
++Once the Docker image build is complete, run the following command to start the playground:
++
++```bash
++docker-compose up -d
++```
++
++One way of checking if the playground was successfully started is accessing some of the services exposed:
++
++1. visiting Flink Web UI [http://localhost:8081](http://localhost:8081).
++2. visiting Elasticsearch [http://localhost:9200](http://localhost:9200).
++3. visiting Kibana [http://localhost:5601](http://localhost:5601).
++
++**Note:** you may need to wait around 1 minute before all the services come up.
++
++### Stopping the Playground
++
++To stop the playground, run the following command:
++
++```bash
++docker-compose down
++```
++
++
++## Runing the PyFlink job
++
++1. Submit the PyFlink job.
++```shell script
++$ docker-compose exec jobmanager ./bin/flink run -py /opt/pyflink-walkthrough/payment_msg_proccessing.py -d
++```
++
++2. Navigate to the [Kibana UI](http://localhost:5601) and choose the pre-created dashboard `payment_dashboard`.
++
++![image](pic/dash_board.png)
++
++![image](pic/final.png)
++
++3. Stop the PyFlink job:
++
++Visit the Flink Web UI at [http://localhost:8081/#/overview](http://localhost:8081/#/overview) , select the job and click `Cancle` on the upper right side.","[{'comment': '```suggestion\r\nVisit the Flink Web UI at [http://localhost:8081/#/overview](http://localhost:8081/#/overview) , select the job and click `Cancel` on the upper right side.\r\n```', 'commenter': 'alpinegizmo'}]"
+16,pyflink-walkthrough/README.md,"@@ -0,0 +1,107 @@
++# pyflink-walkthrough
++
++## Background
++
++In this playground, you will learn how to build and run an end-to-end PyFlink pipeline for data analytics, covering the following steps:
++
++* Reading data from a Kafka source;
++* Creating data using a [UDF](https://ci.apache.org/projects/flink/flink-docs-release-1.11/dev/python/table-api-users-guide/udfs/python_udfs.html);
++* Performing a simple aggregation over the source data;
++* Writing the results to Elasticsearch and visualizing them in Kibana.
++
++### Kafka
++You will be using Kafka to store sample input data about payment transactions. A simple data generator [generate_source_data.py](generator/generate_source_data.py) is provided to
++continuously write new records to the `payment_msg` Kafka topic. Each record is structured as follows:
++ 
++`{""createTime"": ""2020-08-12 06:29:02"", ""orderId"": 1597213797, ""payAmount"": 28306.44976403719, ""payPlatform"": 0, ""provinceId"": 4}`
++
++* `createTime`: The creation time of the transaction. 
++* `orderId`: The id of the current transaction.
++* `payAmount`: The pay amount of the current transaction.
++* `payPlatform`: The platform used to pay the order, pc or mobile.
++* `provinceId`: The id of the province for the user. 
++
++You can use the following command to read data from the Kafka topic and check whether it's generated correctly:
++```shell script
++$ docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic payment_msg
++{""createTime"":""2020-07-27 09:25:32.77"",""orderId"":1595841867217,""payAmount"":7732.44,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.231"",""orderId"":1595841867218,""payAmount"":75774.05,""payPlatform"":0,""provinceId"":3}
++{""createTime"":""2020-07-27 09:25:33.72"",""orderId"":1595841867219,""payAmount"":65908.55,""payPlatform"":0,""provinceId"":0}
++{""createTime"":""2020-07-27 09:25:34.216"",""orderId"":1595841867220,""payAmount"":15341.11,""payPlatform"":0,""provinceId"":1}
++{""createTime"":""2020-07-27 09:25:34.698"",""orderId"":1595841867221,""payAmount"":37504.42,""payPlatform"":0,""provinceId"":0}
++```
++
++### PyFlink
++
++The transaction data will be processed with PyFlink using the Python script [payment_msg_processing.py](payment_msg_proccessing.py).
++This script will first map the `provinceId` in the input records to its corresponding province name
++using a Python UDF, and them sum the transaction amount for each province using a group aggregate. 
++
++### ElasticSearch
++
++ElasticSearch is used to store upstream processing results and provide efficient query service.
++
++### Kibana
++
++Kibana is an open source data visualization dashboard for ElasticSearch. You will use it to visualize 
++the results of your PyFlink pipeline.
++
++## Setup
++
++As mentioned, the environment for this walkthrough is based on Docker Compose; and uses a custom image
++to spin up Flink (JobManager+TaskManager), Kafka+Zookeeper, the data generator and Elasticsearch+Kibana
++containers.
++
++Your can find the [docker-compose.yaml](docker-compose.yml) file of the pyflink-walkthrough is located in the `pyflink-walkthrough` root directory.
++
++### Building the Docker image
++
++First, build the Docker image by running:
++
++```bash
++docker-compose build
++```
++
++### Starting the Playground
++
++Once the Docker image build is complete, run the following command to start the playground:
++
++```bash
++docker-compose up -d
++```
++
++One way of checking if the playground was successfully started is accessing some of the services exposed:
++
++1. visiting Flink Web UI [http://localhost:8081](http://localhost:8081).
++2. visiting Elasticsearch [http://localhost:9200](http://localhost:9200).
++3. visiting Kibana [http://localhost:5601](http://localhost:5601).
++
++**Note:** you may need to wait around 1 minute before all the services come up.
++
++### Stopping the Playground
++
++To stop the playground, run the following command:
++
++```bash
++docker-compose down
++```
++
++
++## Runing the PyFlink job","[{'comment': '```suggestion\r\n## Running the PyFlink job\r\n```', 'commenter': 'alpinegizmo'}]"
+16,pyflink-walkthrough/README.md,"@@ -102,6 +106,24 @@ $ docker-compose exec jobmanager ./bin/flink run -py /opt/pyflink-walkthrough/pa
+ 
+ 3. Stop the PyFlink job:
+ 
+-Visit the Flink Web UI at [http://localhost:8081/#/overview](http://localhost:8081/#/overview) , select the job and click `Cancle` on the upper right side.
++Visit the Flink Web UI at [http://localhost:8081/#/overview](http://localhost:8081/#/overview) , select the job and click `Cancel` on the upper right side.
+ 
+ ![image](pic/cancel.png)
++
++## Extension
++
++You are able to edit the [payment_msg_processing.py](payment_msg_proccessing.py) or create new PyFlink 
++projects to perform more complex processing logic locally on your operating system under the `pyflink-walkthrough` 
++directory since it is mounted on the `jobmanager` docker container. Such as:
++* Creating a new Kafka source table;
++* Creating a new index for the Elasticsearch sink;
++* Calculating the amount of transactions grouped by a 1 minute tumble window and payPlatforms.
++
++After the modification, you can submit the new job by executing the same command mentioned at 
++[Running the PyFlink Job](#running-the-pyflink-job)
++```shell script
++$ docker-compose exec jobmanager ./bin/flink run -py /opt/pyflink-walkthrough/payment_msg_proccessing.py -d
++```
++
++Furthermore, you can also [create new kibana dashboards](https://www.elastic.co/guide/en/kibana/7.8/dashboard-create-new-dashboard.html) 
++to visualize more charts of various dimension based on the persistent indexes in Elasticsearch.","[{'comment': '```suggestion\r\n## Further Explorations\r\n\r\nIf you would like to explore this example more deeply, you can edit [payment_msg_processing.py](payment_msg_proccessing.py) or create new PyFlink \r\nprojects that perform more complex processing. You can do this locally under the `pyflink-walkthrough` \r\ndirectory, since it is mounted on the `jobmanager` docker container. \r\n\r\nIdeas:\r\n* Add your own Kafka source table;\r\n* Create a new index for the Elasticsearch sink;\r\n* Count the number of transactions, grouped by a 1 minute tumbling windows, and by payPlatform.\r\n\r\nAfter making a modification, you can submit the new job by executing the same command mentioned at \r\n[Running the PyFlink Job](#running-the-pyflink-job)\r\n```bash\r\n$ docker-compose exec jobmanager ./bin/flink run -py /opt/pyflink-walkthrough/payment_msg_proccessing.py -d\r\n```\r\n\r\nFurthermore, you can also [create new kibana dashboards](https://www.elastic.co/guide/en/kibana/7.8/dashboard-create-new-dashboard.html) \r\nthat visualize other aspects of the data in the Elasticsearch.\r\n```', 'commenter': 'alpinegizmo'}]"
+21,operations-playground/README.md,"@@ -26,6 +26,15 @@ Build the Docker image by running
+ docker-compose build
+ ```
+ 
++### Preparing Checkpoints&Savepoints paths
++
++Create the checkpoints and savepoints directories on host machine. ('state.checkpoints.dir' and 'state.savepoints.dir' in the flink-conf.yaml)","[{'comment': '```suggestion\r\n### Preparing the Checkpoint and Savepoint Directories\r\n\r\nCreate the checkpoint and savepoint directories on the Docker host machine (these volumes are mounted by the jobmanager and taskmanager, as specified in docker-compose.yaml):\r\n```', 'commenter': 'alpinegizmo'}]"
+35,README.md,"@@ -13,7 +13,7 @@ Currently, the following playgrounds are available:
+ Flink job. The playground is presented in detail in
+ [""Flink Operations Playground""](https://ci.apache.org/projects/flink/flink-docs-release-1.14/docs/try-flink/flink-operations-playground), which is part of the _Try Flink_ section of the Flink documentation.
+ 
+-* The **Table Walkthrough** (in the `table-walkthrough` folder) shows to use the Table API to build an analytics pipeline that reads streaming data from Kafka and writes results to MySQL, along with a real-time dashboard in Grafana. The walkthrough is presented in detail in [""Real Time Reporting with the Table API""](https://ci.apache.org/projects/flink/flink-docs-release-1.14/docs/try-flink/table_api), which is part of the _Try Flink_ section of the Flink documentation.
++* The **Table Walkthrough** (in the `table-walkthrough` folder) shows to use the Table API to build an analytics pipeline that reads streaming data from Kafka and writes results to MySQL, along with a real-time dashboard in Grafana. The walkthrough is presented in detail in [""Real Time Reporting with the Table API""](https://ci.apache.org/projects/flink/flink-docs-release-1.15/docs/try-flink/table_api), which is part of the _Try Flink_ section of the Flink documentation.","[{'comment': '```suggestion\r\n* The **Table Walkthrough** (in the `table-walkthrough` folder) shows how to use the Table API to build an analytics pipeline that reads streaming data from Kafka and writes results to MySQL, along with a real-time dashboard in Grafana. The walkthrough is presented in detail in [""Real Time Reporting with the Table API""](https://ci.apache.org/projects/flink/flink-docs-release-1.15/docs/try-flink/table_api), which is part of the _Try Flink_ section of the Flink documentation.\r\n```', 'commenter': 'alpinegizmo'}]"
+35,table-walkthrough/pom.xml,"@@ -72,9 +72,15 @@ under the License.
+             <version>${flink.version}</version>
+             <scope>test</scope>
+         </dependency>
++        <dependency>
++           <groupId>org.apache.flink</groupId>
++           <artifactId>flink-table-planner_${scala.binary.version}</artifactId>
++           <version>${flink.version}</version>
++           <scope>test</scope>
++       </dependency>","[{'comment': 'Try this instead -- I think it should work. We want to encourage using the scala-free versions wherever possible.\r\n\r\n```suggestion\r\n        <dependency>\r\n           <groupId>org.apache.flink</groupId>\r\n           <artifactId>flink-table-planner-loader</artifactId>\r\n           <version>${flink.version}</version>\r\n           <scope>provided</scope>\r\n        </dependency>\r\n        <dependency>\r\n            <groupId>org.apache.flink</groupId>\r\n            <artifactId>flink-table-runtime</artifactId>\r\n            <version>${flink.version}</version>\r\n            <scope>provided</scope>\r\n        </dependency>\r\n```', 'commenter': 'alpinegizmo'}, {'comment': 'this works as well. thanks for the clarification ', 'commenter': 'roy-michael'}]"

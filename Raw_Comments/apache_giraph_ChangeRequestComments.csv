@@ -1,0 +1,121 @@
+Pull,Path,Diff_hunk,Comment
+28,giraph-core/src/main/java/org/apache/giraph/ooc/policy/MemoryEstimatorOracle.java,"@@ -770,16 +787,17 @@ private boolean refineCoefficient(int coefIndex, double lowerBound,
+      * @param coefficient Array of coefficients
+      * @param validColumnIndices List of valid columns
+      * @param mlr {@link OLSMultipleLinearRegression} instance.
++     * @return True if the result is valid, false otherwise.
+      * @throws Exception","[{'comment': 'You can get rid of the `Exception` in the comments.', 'commenter': 'heslami'}]"
+28,giraph-core/src/main/java/org/apache/giraph/ooc/policy/MemoryEstimatorOracle.java,"@@ -706,12 +721,12 @@ public void addRecord(long memUsed, long edges, long vertices,
+      * @param upperBound Upper bound
+      * @param xValues double[][] matrix with data samples
+      * @param yValues double[] matrix with y samples
+-     * @return True if coefficients were out-of-range
++     * @return True if coefficients were out-of-range, false otherwise. A null value means the
++     *         regression result was invalid and the result of this method is invalid too.
+      * @throws Exception","[{'comment': 'You can get rid of the `Exception` in the comments.', 'commenter': 'heslami'}]"
+28,giraph-core/src/main/java/org/apache/giraph/ooc/policy/MemoryEstimatorOracle.java,"@@ -653,8 +657,19 @@ public void addRecord(long memUsed, long edges, long vertices,
+           extreme[3] = -1;
+           extreme[4] = -1;
+           do {
+-            changed = refineCoefficient(4, 1, 2, xValues, yValues);
+-            changed |= refineCoefficient(3, 0, 2, xValues, yValues);
++            Boolean result = null;
++
++            result = refineCoefficient(4, 1, 2, xValues, yValues);
++            if (result == null) { // invalid regression result
++              return;  // finally-block will release lock
++            }
++            changed = result;
++
++            result = refineCoefficient(3, 0, 2, xValues, yValues);
++            if (result == null) { // invalid regression result
++              return;  // finally-block will release lock
++            }
++            changed |= result;","[{'comment': 'You can now get rid of the `catch` block too.', 'commenter': 'heslami'}]"
+36,giraph-block-app/src/main/java/org/apache/giraph/block_app/framework/block/EmptyBlock.java,"@@ -36,4 +36,9 @@
+   @Override
+   public void forAllPossiblePieces(Consumer<AbstractPiece> consumer) {
+   }
++
++  @Override
++  public PieceCount getPieceCount() {
++    return new PieceCount(1);","[{'comment': 'should be 0', 'commenter': 'ikabiljo'}]"
+36,giraph-block-app/src/main/java/org/apache/giraph/block_app/framework/block/PieceCount.java,"@@ -0,0 +1,86 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * ""License""); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an ""AS IS"" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.apache.giraph.block_app.framework.block;
++
++import com.google.common.base.Objects;
++
++/**
++ * Number of pieces
++ */
++public class PieceCount {
++  private boolean known;
++  private int count;
++
++  public PieceCount(int count) {
++    known = true;
++    this.count = count;
++  }
++
++  private PieceCount() {
++    known = false;
++  }
++
++  public static PieceCount createUnknownCount() {
++    return new PieceCount();
++  }
++
++
++  public PieceCount add(PieceCount other) {
++    if (!this.known || !other.known) {
++      known = false;
++    } else {
++      count += other.count;
++    }
++    return this;
++  }
++
++  public PieceCount multiply(int value) {
++    count *= value;
++    return this;
++  }
++
++  public int getCount() {
++    return known ? count : Integer.MAX_VALUE;","[{'comment': 'this might easily lead to overflow if anything is done with this number.\r\n\r\nYou should either fatal (better), or return 1M or something here.', 'commenter': 'ikabiljo'}, {'comment': ""Good point, I'll throw instead"", 'commenter': 'majakabiljo'}]"
+36,giraph-block-app/src/main/java/org/apache/giraph/block_app/framework/piece/delegate/DelegatePiece.java,"@@ -249,6 +250,15 @@ public void forAllPossiblePieces(Consumer<AbstractPiece> consumer) {
+     }
+   }
+ 
++  @Override
++  public PieceCount getPieceCount() {
++    PieceCount ret = new PieceCount(0);","[{'comment': 'this should be 1, this executes all pieces simultaneously.', 'commenter': 'ikabiljo'}]"
+36,giraph-block-app/src/main/java/org/apache/giraph/block_app/framework/BlockUtils.java,"@@ -147,6 +148,11 @@ public static void initAndCheckConfig(GiraphConfiguration conf) {
+     checkBlockTypes(
+         executionBlock, blockFactory.createExecutionStage(immConf), immConf);
+ 
++    PieceCount pieceCount = executionBlock.getPieceCount();
++    if (pieceCount.isKnown()) {
++      GiraphConstants.SUPERSTEP_COUNT.set(conf, pieceCount.getCount());","[{'comment': ""shouldn't it be pieceCount.getCount() + 1 ? "", 'commenter': 'ikabiljo'}, {'comment': 'There will be X+1 supersteps, but they are going to be supersteps 0..X. Actually I can make +1 here and then -1 in the logging part to keep it clear.', 'commenter': 'majakabiljo'}]"
+36,giraph-block-app/src/main/java/org/apache/giraph/block_app/framework/piece/delegate/DelegatePiece.java,"@@ -249,6 +250,11 @@ public void forAllPossiblePieces(Consumer<AbstractPiece> consumer) {
+     }
+   }
+ 
++  @Override","[{'comment': ""you don't need to extend, default is 1 for any piece :)"", 'commenter': 'ikabiljo'}]"
