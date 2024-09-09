@@ -1,0 +1,737 @@
+Pull,Path,Diff_hunk,Comment
+37,RELEASE-NOTES.md,"@@ -35,9 +35,23 @@
+     retrying an SLA-aware kill (using a truncated binary backoff).
+     3. `sla_aware_kill_retry_max_delay (default: 5mins)`: the maximum amount of time to wait before
+     retrying an SLA-aware kill (using a truncated binary backoff).
++- New update strategy added: Variable Batch Update. With this strategy, a job may be updated in","[{'comment': 'Needs to be moved to a new release section, now that 0.21 is out.', 'commenter': 'StephanErb'}]"
+37,docs/reference/configuration.md,"@@ -376,8 +376,34 @@ Parameters for controlling the rate and policy of rolling updates.
+ | ```rollback_on_failure```    | boolean  | When False, prevents auto rollback of a failed update (Default: True)
+ | ```wait_for_batch_completion```| boolean | When True, all threads from a given batch will be blocked from picking up new instances until the entire batch is updated. This essentially simulates the legacy sequential updater algorithm. (Default: False)
+ | ```pulse_interval_secs```    | Integer  |  Indicates a [coordinated update](../features/job-updates.md#coordinated-job-updates). If no pulses are received within the provided interval the update will be blocked. Beta-updater only. Will fail on submission when used with client updater. (Default: None)
++| ```update_strategy```        | Choice of ```QueueUpdateStrategy```,  ```BatchUpdateStrategy```, or ```VariableBatchUpdateStrategy``` object | Indicate which update strategy to use for this update.
+ | ```sla_aware```              | boolean  | When True, updates will only update an instance if it does not break the task's specified [SLA Requirements](../features/sla-requirements.md). (Default: None)
+ 
++### QueueUpdateStrategy Objects
++
++Update strategy which will keep the active updating instances at size ```batch_size``` throughout the update until there are no more instances left to update.
++
++| object                       | type     | description
++| ---------------------------- | :------: | ------------
++| ```batch_size```             | Integer  | Maximum number of shards to be updated in one iteration (Default: 1)
++
++### BatchUpdateStrategy Objects
++
++Update strategy which will wait until a maximum of ``batch_size`` number of instances are updated before continuing on to the next group until all instances are updated.
++
++| object                       | type     | description
++| ---------------------------- | :------: | ------------
++| ```batch_size```             | Integer  | Maximum number of shards to be updated in one iteration (Default: 1)
++
++### VariableBatchUpdateStrategy Objects
++
++Similar to Batch Update strategy, this strategy will wait until all instances in a current group are updated before updating more instances.
++However, with this strategy the size of each group may change as the update progresses.","[{'comment': 'This sentence seems to contradict `""Each batch behaves in the same way as the static batch update strategy where the group size remains constant throughout the update.""` from the RELEASE-NOTES.', 'commenter': 'StephanErb'}, {'comment': 'Good catch!', 'commenter': 'ridv'}]"
+37,examples/jobs/hello_world_variable_update.aurora,"@@ -0,0 +1,30 @@
++#
++# Licensed under the Apache License, Version 2.0 (the ""License"");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#     http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an ""AS IS"" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
++
++hello = Process(
++  name = 'hello',
++  cmdline = """"""
++    while true; do
++      echo hello world
++      sleep 10
++    done
++  """""")
++
++task = SequentialTask(
++  processes = [hello],
++  resources = Resources(cpu = .10, ram = 8*MB, disk = 8*MB))
++
++jobs = [Service(
++  task = task, cluster = 'devcluster', role = 'www-data', environment = 'prod', name = 'hello', instances = 6,
++update_config = UpdateConfig(update_strategy = VariableBatchUpdateStrategy(batch_sizes = [1,2,3])))]","[{'comment': 'Nitpick (as this is in our examples): Please format with multiple lines and indentation rather than having everything on one line.', 'commenter': 'StephanErb'}]"
+37,src/main/java/org/apache/aurora/scheduler/storage/durability/ThriftBackfill.java,"@@ -143,8 +148,28 @@ public IJobUpdate backFillJobUpdate(JobUpdate update) {
+       backfillTask(instructions.getDesiredState().getTask());
+     }
+ 
++    backfillUpdateStrategy(instructions.getSettings());
++
+     instructions.getInitialState().forEach(e -> backfillTask(e.getTask()));
+ 
+     return IJobUpdate.build(update);
+   }
++
++  private void backfillUpdateStrategy(JobUpdateSettings settings) {","[{'comment': 'I think we should also perform the reverse operation here if possible: If only the new settings are set, also write the deprecated ones.\r\n\r\nThis does not add much complexity but makes scheduler upgrade/downgrade paths easier to reason about.', 'commenter': 'StephanErb'}, {'comment': ""Will do this. In order to do this, I'll have a lossy conversion from the variable batch update strategy to a static batch update strategy which uses index 0 of the list contained by the variable batch update strategy.\r\n\r\ne.g.: VarBatchUpdate = [1,2,3,4] will become BatchUpdate, group Size = 1 if the scheduler is downgraded to 0.19.0."", 'commenter': 'ridv'}, {'comment': 'It is more complicated than that. As soon as we persist one of these structs, we will be unable to roll back to any previous version of the software that does not have the thrift changes. To enable safe roll-back/roll-forward, we will need a commit/release with just the Thrift changes.', 'commenter': 'DavidMcLaughlin'}, {'comment': ""Thanks for the input @DavidMcLaughlin, I'll create a PR with just the Thrift changes in that case."", 'commenter': 'ridv'}, {'comment': ""Tested this out by starting a vagrant box. Changed the code inside of [SchedulerThriftInterface.java](https://github.com/rdelval/aurora/blob/staggeredUpdates/src/main/java/org/apache/aurora/scheduler/thrift/SchedulerThriftInterface.java#L798) to set these fields upon receiving the request:\r\n\r\n```    // Keep old job schema in case we want to revert to a lower version of Aurora that doesn't\r\n    // support variable update group sizes\r\n    int totalInstancesFromGroups;\r\n    if (settings.getUpdateStrategy().isSetQueueStrategy()) {\r\n      totalInstancesFromGroups = settings.getUpdateStrategy().getQueueStrategy().getGroupSize();\r\n      settings.setWaitForBatchCompletion(false);\r\n      settings.setUpdateGroupSize(settings.getUpdateStrategy().getQueueStrategy().getGroupSize());\r\n    } else if (settings.getUpdateStrategy().isSetBatchStrategy()) {\r\n      totalInstancesFromGroups = settings.getUpdateStrategy().getBatchStrategy().getGroupSize();\r\n      settings.setWaitForBatchCompletion(true);\r\n      settings.setUpdateGroupSize(settings.getUpdateStrategy().getBatchStrategy().getGroupSize());\r\n    } else if (settings.getUpdateStrategy().isSetVarBatchStrategy()) {\r\n      VariableBatchJobUpdateStrategy strategy = settings.getUpdateStrategy().getVarBatchStrategy();\r\n      settings.setWaitForBatchCompletion(true);\r\n      // Setting this value to allow graceful rollback to version 0.21.0\r\n      // TODO(rdelvalle): Remove compatibility settings once version 0.22.0 ships\r\n      settings.setUpdateGroupSize(1); // Necessary because we haven't validated fields yet.\r\n```\r\n\r\nI created a Variable batch update, then shut down the scheduler, and checked out tag rel/0.21.0 and ran aurorabuild all on the vagrant box. \r\n\r\nThe scheduler came up fine. I forced a snapshot and a backup, restarted the scheduler with out issue. I upgraded the vagrant box back to the staggered updates patch and there was info loss (update no longer had staggered updates fields set so it stayed as a batch update), which in this case is an acceptable outcome IMO. \r\n\r\nWill update the patch with all the changes."", 'commenter': 'ridv'}]"
+37,src/main/java/org/apache/aurora/scheduler/updater/strategy/VariableBatchStrategy.java,"@@ -0,0 +1,135 @@
++/**
++ * Licensed under the Apache License, Version 2.0 (the ""License"");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an ""AS IS"" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.aurora.scheduler.updater.strategy;
++
++import java.util.List;
++import java.util.Objects;
++import java.util.Optional;
++import java.util.Set;
++import java.util.stream.Collectors;
++
++import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableList;
++import com.google.common.collect.ImmutableSet;
++import com.google.common.collect.Ordering;
++
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++/**
++ * A strategy that limits the number of instances selected by the subclass using variable steps.
++ *
++ * @param <T> Instance type.
++ */
++public class VariableBatchStrategy<T extends Comparable<T>> implements UpdateStrategy<T> {
++  private final Ordering<T> ordering;
++  protected final ImmutableList<Integer> maxActiveGroups;
++  private final boolean rollingForward;
++  private Optional<Integer> instanceModificationCount;
++
++  private static final Logger LOG = LoggerFactory.getLogger(VariableBatchStrategy.class);
++
++  /**
++   * Creates a variable active-limited strategy that applies an upper bound to all results.
++   *
++   * @param maxActiveGroups  List of Maximum group sizes. Each group size represents a step.
++   * {@link #getNextGroup(Set, Set)}.
++   */
++  public VariableBatchStrategy(Ordering<T> ordering,
++      List<Integer> maxActiveGroups,
++      boolean rollingForward) {
++
++    this.ordering = Objects.requireNonNull(ordering);
++    this.rollingForward = rollingForward;
++
++    maxActiveGroups.forEach(x -> Preconditions.checkArgument(x > 0));
++
++    this.maxActiveGroups = ImmutableList.copyOf(maxActiveGroups);
++    this.instanceModificationCount = Optional.empty();
++  }
++
++  private int determineStep(int idle) {
++
++    // Calculate which step we are in by finding out how many instances we have left to update.
++    int scheduled = instanceModificationCount.get() - idle;
++
++    int step = 0;
++    int sum = 0;
++
++    LOG.info(""Update progress {} changed, {} idle, and {} total to be changed."",
++        scheduled,
++        idle,
++        instanceModificationCount.get());
++
++    if (rollingForward) {
++      while (sum < scheduled && step < maxActiveGroups.size()) {
++        sum += maxActiveGroups.get(step);
++
++        ++step;
++      }
++    } else {
++
++      // Starting with the first step as we're now comparing to idle instead of scheduled
++      // to work backwards from the last step that was executed in the batch steps.
++      sum = maxActiveGroups.get(step);
++
++      // TODO(rdelvalle): Consider if it's necessary to handle fractional steps.
++      // (i.e. halfway between step X and X+1)","[{'comment': ""I think now would be the best time to reason about this. I don't think fractional steps are necessary, but maybe you can elaborate what you had in mind."", 'commenter': 'StephanErb'}, {'comment': ""This thought may have come up as a side effect of the old way of calculating the current batch size. What I was thinking about is if half way through a batch size, the scheduler fails over and the update has to continue from where it left off when the next leader is chosen.\r\n\r\nE.g: We have batch sizes 10 and 30. Half way through 30 (25 instances updated), the scheduler fails over.\r\n\r\nWith the new way of calculating which batch size we're on on the fly, I don't think it's an issue anymore."", 'commenter': 'ridv'}]"
+37,src/main/java/org/apache/aurora/scheduler/updater/strategy/VariableBatchStrategy.java,"@@ -0,0 +1,135 @@
++/**
++ * Licensed under the Apache License, Version 2.0 (the ""License"");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an ""AS IS"" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.aurora.scheduler.updater.strategy;
++
++import java.util.List;
++import java.util.Objects;
++import java.util.Optional;
++import java.util.Set;
++import java.util.stream.Collectors;
++
++import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableList;
++import com.google.common.collect.ImmutableSet;
++import com.google.common.collect.Ordering;
++
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++/**
++ * A strategy that limits the number of instances selected by the subclass using variable steps.
++ *
++ * @param <T> Instance type.
++ */
++public class VariableBatchStrategy<T extends Comparable<T>> implements UpdateStrategy<T> {
++  private final Ordering<T> ordering;
++  protected final ImmutableList<Integer> maxActiveGroups;
++  private final boolean rollingForward;
++  private Optional<Integer> instanceModificationCount;
++
++  private static final Logger LOG = LoggerFactory.getLogger(VariableBatchStrategy.class);
++
++  /**
++   * Creates a variable active-limited strategy that applies an upper bound to all results.
++   *
++   * @param maxActiveGroups  List of Maximum group sizes. Each group size represents a step.
++   * {@link #getNextGroup(Set, Set)}.
++   */
++  public VariableBatchStrategy(Ordering<T> ordering,
++      List<Integer> maxActiveGroups,
++      boolean rollingForward) {
++
++    this.ordering = Objects.requireNonNull(ordering);
++    this.rollingForward = rollingForward;
++
++    maxActiveGroups.forEach(x -> Preconditions.checkArgument(x > 0));
++
++    this.maxActiveGroups = ImmutableList.copyOf(maxActiveGroups);
++    this.instanceModificationCount = Optional.empty();
++  }
++
++  private int determineStep(int idle) {","[{'comment': 'Please add one short comment that explains what this function does. For a casual reader it can be confusing what you mean with step.', 'commenter': 'StephanErb'}, {'comment': ""I agree, I think this function would actually benefit more from having it's name changed to `determineCurBatchSize`."", 'commenter': 'ridv'}]"
+37,src/main/java/org/apache/aurora/scheduler/thrift/SchedulerThriftInterface.java,"@@ -792,9 +796,51 @@ public Response startJobUpdate(JobUpdateRequest mutableRequest, @Nullable String
+       return invalidRequest(NON_SERVICE_TASK);
+     }
+ 
++    int totalInstancesFromGroups;
+     JobUpdateSettings settings = requireNonNull(mutableRequest.getSettings());
+-    if (settings.getUpdateGroupSize() <= 0) {
+-      return invalidRequest(INVALID_GROUP_SIZE);
++
++    // Gracefully handle a client sending an update with an older thrift schema
++    // TODO(rdelvalle): Remove after version 0.22.0 ships
++    if (!settings.isSetUpdateStrategy()) {","[{'comment': 'Duplicated code from the Backfill. Extract and reuse? ', 'commenter': 'DavidMcLaughlin'}, {'comment': 'Agreed, fixed.', 'commenter': 'ridv'}]"
+37,src/main/java/org/apache/aurora/scheduler/thrift/SchedulerThriftInterface.java,"@@ -792,9 +796,51 @@ public Response startJobUpdate(JobUpdateRequest mutableRequest, @Nullable String
+       return invalidRequest(NON_SERVICE_TASK);
+     }
+ 
++    int totalInstancesFromGroups;
+     JobUpdateSettings settings = requireNonNull(mutableRequest.getSettings());
+-    if (settings.getUpdateGroupSize() <= 0) {
+-      return invalidRequest(INVALID_GROUP_SIZE);
++
++    // Gracefully handle a client sending an update with an older thrift schema
++    // TODO(rdelvalle): Remove after version 0.22.0 ships
++    if (!settings.isSetUpdateStrategy()) {
++      if (settings.isWaitForBatchCompletion()) {
++        settings.setUpdateStrategy(
++            JobUpdateStrategy.batchStrategy(
++                new BatchJobUpdateStrategy().setGroupSize(settings.getUpdateGroupSize())));
++      } else {
++        settings.setUpdateStrategy(
++            JobUpdateStrategy.queueStrategy(
++                new QueueJobUpdateStrategy().setGroupSize(settings.getUpdateGroupSize())));
++      }
++    }
++
++    // Keep old job schema in case we want to revert to a lower version of Aurora that doesn't","[{'comment': 'In the Aurora CLI the batch_size has a default value of 1, so all new updates will continue to have that field set. None of this conversion should be necessary. ', 'commenter': 'DavidMcLaughlin'}, {'comment': ""That's actually a great point. I removed the code, spun up a vagrant box, generated a variable batch update, and downgraded. Scheduler came up just fine."", 'commenter': 'ridv'}]"
+37,src/main/python/apache/aurora/config/schema/base.py,"@@ -38,6 +46,7 @@ class UpdateConfig(Struct):
+   wait_for_batch_completion   = Default(Boolean, False)
+   pulse_interval_secs         = Integer
+   sla_aware                   = Default(Boolean, False)
++  update_strategy = Choice([QueueUpdateStrategy, BatchUpdateStrategy, VariableBatchUpdateStrategy])","[{'comment': 'Nit: align code with existing style. ', 'commenter': 'DavidMcLaughlin'}, {'comment': 'I think I fixed this with the latest push but let me know if the style is still not right.', 'commenter': 'ridv'}]"
+37,src/main/python/apache/aurora/config/schema/base.py,"@@ -38,6 +46,9 @@ class UpdateConfig(Struct):
+   wait_for_batch_completion   = Default(Boolean, False)
+   pulse_interval_secs         = Integer
+   sla_aware                   = Default(Boolean, False)
++  update_strategy = Choice([QueueUpdateStrategy,","[{'comment': 'style nit - tabs to align', 'commenter': 'shanmugh'}]"
+37,src/main/java/org/apache/aurora/scheduler/updater/UpdateFactory.java,"@@ -76,12 +77,10 @@ Update newUpdate(
+     public Update newUpdate(IJobUpdateInstructions instructions, boolean rollingForward) {
+       requireNonNull(instructions);
+       IJobUpdateSettings settings = instructions.getSettings();
++
+       checkArgument(
+           settings.getMinWaitInInstanceRunningMs() >= 0,
+           ""Min wait in running must be non-negative."");
+-      checkArgument(","[{'comment': 'Although `JobUpdateInstructions` have been validated already via the thrift API, checking `getMinWaitInInstanceRunningMs` and not `getUpdateGroupSize` looks weird.', 'commenter': 'shanmugh'}]"
+37,src/main/java/org/apache/aurora/scheduler/updater/strategy/VariableBatchStrategy.java,"@@ -0,0 +1,152 @@
++/**
++ * Licensed under the Apache License, Version 2.0 (the ""License"");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an ""AS IS"" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.aurora.scheduler.updater.strategy;
++
++import java.util.List;
++import java.util.Objects;
++import java.util.Optional;
++import java.util.Set;
++import java.util.stream.Collectors;
++
++import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableList;
++import com.google.common.collect.ImmutableSet;
++import com.google.common.collect.Ordering;
++
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++/**
++ * A strategy that limits the number of instances selected by the subclass using variable steps.
++ *
++ * @param <T> Instance type.
++ */
++public class VariableBatchStrategy<T extends Comparable<T>> implements UpdateStrategy<T> {
++  private final Ordering<T> ordering;
++  protected final ImmutableList<Integer> maxActiveGroups;
++  private final boolean rollingForward;
++  private Optional<Integer> totalModInstanceCount;
++
++  private static final Logger LOG = LoggerFactory.getLogger(VariableBatchStrategy.class);
++
++  /**
++   * Creates a variable active-limited strategy that applies an upper bound to all results.
++   *
++   * @param maxActiveGroups  List of Maximum group sizes. Each group size represents a step.
++   * {@link #getNextGroup(Set, Set)}.
++   */
++  public VariableBatchStrategy(Ordering<T> ordering,
++      List<Integer> maxActiveGroups,
++      boolean rollingForward) {
++
++    this.ordering = Objects.requireNonNull(ordering);
++    this.rollingForward = rollingForward;
++
++    maxActiveGroups.forEach(x -> Preconditions.checkArgument(x > 0));
++
++    this.maxActiveGroups = ImmutableList.copyOf(maxActiveGroups);
++    this.totalModInstanceCount = Optional.empty();
++  }
++
++  // Determine how far we're into the update based upon how many instances are waiting
++  // to be modified.
++  private int determineCurGroupSize(int remaining) {
++
++    // Calculate which groupIndex we are in by finding out how many instances we have left to update
++    int modified = totalModInstanceCount.get() - remaining;
++
++    int lastGroupSize = maxActiveGroups.get(maxActiveGroups.size() - 1);
++
++    LOG.debug(""Variable Batch Update progress: {} instances have been modified, ""
++            + ""{} instances remain unmodified, and {} overall instances to be modified."",
++        modified,
++        remaining,
++        totalModInstanceCount.get());
++
++    if (rollingForward) {
++
++      int sum = 0;
++      for (Integer groupSize : maxActiveGroups) {
++        sum += groupSize;
++
++        if (sum > modified) {
++          return groupSize;
++        }
++      }
++      // Return last step when number of instances > sum of all groups
++      return lastGroupSize;
++    } else {
++
++      // To perform the update in reverse, we use the number of remaining tasks left to update
++      // instead of using the number of already modified instances. In a rollback, the remaining
++      // count represents the number of instances that were already modified while rolling forward
++      // and need to be reverted.
++      int curGroupSize = remaining;
++
++      for (Integer groupSize : maxActiveGroups) {
++        // This handles an in between step. i.e.: updated instances = 4, update groups = [2,3]
++        // which results in update groups 2 and 2 rolling forward at the time of failure.
++        if (curGroupSize <= groupSize) {
++          return curGroupSize;
++        }
++
++        curGroupSize -= groupSize;
++      }
++
++      // Handle the case where number of instances update were
++      // greater than the sum of all update groups
++      // Calculate the size of the last update group size performed while rolling forward.
++      curGroupSize = curGroupSize % lastGroupSize;
++      if (curGroupSize == 0) {
++        return lastGroupSize;
++      } else {
++        return curGroupSize;
++      }
++    }
++  }
++
++  @Override
++  public final Set<T> getNextGroup(Set<T> idle, Set<T> active) {
++
++    // Get the size for the idle set on the first run only. This is representative of the number
++    // of overall instance modifications this update will trigger.
++    if (!totalModInstanceCount.isPresent()) {
++      totalModInstanceCount = Optional.of(idle.size());
++    }
++
++    // Limit group size to the current size of the group minus the number of instances currently
++    // being modified.
++    return ordering.sortedCopy(doGetNextGroup(idle, active)).stream()
++            .limit(Math.max(0, determineCurGroupSize(idle.size()) - active.size()))
++            .collect(Collectors.toSet());
++  }
++
++  /**
++   * Return a list of instances to be updated.
++   * Returns an empty list if the current active group has not completed.
++   * If the result is larger than the current group size in {@link #maxActiveGroups},","[{'comment': 'Stale comment?', 'commenter': 'shanmugh'}]"
+37,src/main/java/org/apache/aurora/scheduler/updater/strategy/VariableBatchStrategy.java,"@@ -0,0 +1,152 @@
++/**
++ * Licensed under the Apache License, Version 2.0 (the ""License"");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an ""AS IS"" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.aurora.scheduler.updater.strategy;
++
++import java.util.List;
++import java.util.Objects;
++import java.util.Optional;
++import java.util.Set;
++import java.util.stream.Collectors;
++
++import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableList;
++import com.google.common.collect.ImmutableSet;
++import com.google.common.collect.Ordering;
++
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++/**
++ * A strategy that limits the number of instances selected by the subclass using variable steps.","[{'comment': 'There are not subclasses to this class. Suggest rewording to - `An update strategy that will only add more work when the current active group is empty. Size of the groups are picked from the supplied last, picking the last element multiple times if necessary.`', 'commenter': 'shanmugh'}]"
+37,src/main/java/org/apache/aurora/scheduler/updater/strategy/VariableBatchStrategy.java,"@@ -0,0 +1,152 @@
++/**
++ * Licensed under the Apache License, Version 2.0 (the ""License"");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an ""AS IS"" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.aurora.scheduler.updater.strategy;
++
++import java.util.List;
++import java.util.Objects;
++import java.util.Optional;
++import java.util.Set;
++import java.util.stream.Collectors;
++
++import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableList;
++import com.google.common.collect.ImmutableSet;
++import com.google.common.collect.Ordering;
++
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++/**
++ * A strategy that limits the number of instances selected by the subclass using variable steps.
++ *
++ * @param <T> Instance type.
++ */
++public class VariableBatchStrategy<T extends Comparable<T>> implements UpdateStrategy<T> {
++  private final Ordering<T> ordering;
++  protected final ImmutableList<Integer> maxActiveGroups;
++  private final boolean rollingForward;
++  private Optional<Integer> totalModInstanceCount;
++
++  private static final Logger LOG = LoggerFactory.getLogger(VariableBatchStrategy.class);
++
++  /**
++   * Creates a variable active-limited strategy that applies an upper bound to all results.
++   *
++   * @param maxActiveGroups  List of Maximum group sizes. Each group size represents a step.
++   * {@link #getNextGroup(Set, Set)}.
++   */
++  public VariableBatchStrategy(Ordering<T> ordering,
++      List<Integer> maxActiveGroups,","[{'comment': 'The `max` in the variable name is a little misleading. Suggest using `groupSizes`.', 'commenter': 'shanmugh'}]"
+37,src/main/java/org/apache/aurora/scheduler/updater/strategy/VariableBatchStrategy.java,"@@ -0,0 +1,152 @@
++/**
++ * Licensed under the Apache License, Version 2.0 (the ""License"");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an ""AS IS"" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.aurora.scheduler.updater.strategy;
++
++import java.util.List;
++import java.util.Objects;
++import java.util.Optional;
++import java.util.Set;
++import java.util.stream.Collectors;
++
++import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableList;
++import com.google.common.collect.ImmutableSet;
++import com.google.common.collect.Ordering;
++
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++/**
++ * A strategy that limits the number of instances selected by the subclass using variable steps.
++ *
++ * @param <T> Instance type.
++ */
++public class VariableBatchStrategy<T extends Comparable<T>> implements UpdateStrategy<T> {
++  private final Ordering<T> ordering;
++  protected final ImmutableList<Integer> maxActiveGroups;
++  private final boolean rollingForward;
++  private Optional<Integer> totalModInstanceCount;
++
++  private static final Logger LOG = LoggerFactory.getLogger(VariableBatchStrategy.class);
++
++  /**
++   * Creates a variable active-limited strategy that applies an upper bound to all results.
++   *
++   * @param maxActiveGroups  List of Maximum group sizes. Each group size represents a step.
++   * {@link #getNextGroup(Set, Set)}.
++   */
++  public VariableBatchStrategy(Ordering<T> ordering,
++      List<Integer> maxActiveGroups,
++      boolean rollingForward) {
++
++    this.ordering = Objects.requireNonNull(ordering);
++    this.rollingForward = rollingForward;
++
++    maxActiveGroups.forEach(x -> Preconditions.checkArgument(x > 0));
++
++    this.maxActiveGroups = ImmutableList.copyOf(maxActiveGroups);
++    this.totalModInstanceCount = Optional.empty();
++  }
++
++  // Determine how far we're into the update based upon how many instances are waiting
++  // to be modified.
++  private int determineCurGroupSize(int remaining) {
++
++    // Calculate which groupIndex we are in by finding out how many instances we have left to update
++    int modified = totalModInstanceCount.get() - remaining;
++
++    int lastGroupSize = maxActiveGroups.get(maxActiveGroups.size() - 1);","[{'comment': 'nit - s/last/final/', 'commenter': 'shanmugh'}]"
+37,src/test/sh/org/apache/aurora/e2e/test_end_to_end.sh,"@@ -364,7 +364,6 @@ test_update() {
+   # Check that the update ended in ROLLED_FORWARD state.  Assumes the status is the last column.
+   assert_update_state_by_id $_jobkey $_update_id 'ROLLED_FORWARD'
+ }
+-
+ test_update_fail() {","[{'comment': 'None of the existing updates seem to test that batching. Does this change require these verifications?', 'commenter': 'shanmugh'}]"
+37,src/main/python/apache/aurora/client/api/updater_util.py,"@@ -80,6 +84,18 @@ def to_thrift_update_settings(self, instances=None):
+     Arguments:
+     instances - optional list of instances to update.
+     """"""
++
++    if self.update_strategy is Empty:","[{'comment': 'Should we update `self.batch_size` if the user specified an `update_strategy`? Consider the case of a rolled scheduler, that is continuing an in-progress update. In this case the update will suddenly slow-down to doing 1 (default) instance at a time.', 'commenter': 'shanmugh'}]"
+37,src/main/python/apache/aurora/client/api/updater_util.py,"@@ -16,40 +16,44 @@
+ from itertools import groupby
+ from operator import itemgetter
+ 
++from pystachio import Empty, Choice
+ from twitter.common import log
+ 
+ from gen.apache.aurora.api.ttypes import JobUpdateSettings, Range
++from apache.aurora.config.schema.base import (
++ BatchUpdateStrategy as PystachioBatchUpdateStrategy,
++ QueueUpdateStrategy as PystachioQueueUpdateStrategy,
++ VariableBatchUpdateStrategy as PystachioVariableBatchUpdateStrategy
++)
++from apache.aurora.config.thrift import create_update_strategy_config
+ 
+ 
+ class UpdaterConfig(object):
+   MIN_PULSE_INTERVAL_SECONDS = 60
+ 
+-  def __init__(self,
+-               batch_size,
+-               watch_secs,
+-               max_per_shard_failures,
+-               max_total_failures,
+-               rollback_on_failure=True,
+-               wait_for_batch_completion=False,
+-               pulse_interval_secs=None,
+-               sla_aware=None):
+-
+-    if batch_size <= 0:
++  def __init__(self, config):
++    self.batch_size = config.batch_size().get()","[{'comment': 'It is going to be a little confusing when users specify both `batch_size` and `update_strategy`. Should we fail-fast in this case?', 'commenter': 'shanmugh'}]"
+37,src/main/python/apache/aurora/client/api/updater_util.py,"@@ -16,40 +16,44 @@
+ from itertools import groupby
+ from operator import itemgetter
+ 
++from pystachio import Empty, Choice
+ from twitter.common import log
+ 
+ from gen.apache.aurora.api.ttypes import JobUpdateSettings, Range
++from apache.aurora.config.schema.base import (
++ BatchUpdateStrategy as PystachioBatchUpdateStrategy,
++ QueueUpdateStrategy as PystachioQueueUpdateStrategy,
++ VariableBatchUpdateStrategy as PystachioVariableBatchUpdateStrategy
++)
++from apache.aurora.config.thrift import create_update_strategy_config
+ 
+ 
+ class UpdaterConfig(object):
+   MIN_PULSE_INTERVAL_SECONDS = 60
+ 
+-  def __init__(self,
+-               batch_size,
+-               watch_secs,
+-               max_per_shard_failures,
+-               max_total_failures,
+-               rollback_on_failure=True,
+-               wait_for_batch_completion=False,
+-               pulse_interval_secs=None,
+-               sla_aware=None):
+-
+-    if batch_size <= 0:
++  def __init__(self, config):
++    self.batch_size = config.batch_size().get()
++    self.watch_secs = config.watch_secs().get()
++    self.max_total_failures = config.max_total_failures().get()
++    self.max_per_instance_failures = config.max_per_shard_failures().get()
++    self.update_strategy = config.update_strategy()
++    self.sla_aware = config.sla_aware().get()
++    self.wait_for_batch_completion = config.wait_for_batch_completion().get()","[{'comment': 'Same here.', 'commenter': 'shanmugh'}]"
+37,src/test/python/apache/aurora/client/api/test_updater_util.py,"@@ -46,15 +71,94 @@ def test_empty_list(self):
+     assert UpdaterConfig.instances_to_ranges([]) is None, ""Result must be None.""
+ 
+   def test_pulse_interval_secs(self):
+-    config = UpdaterConfig(1, 1, 1, 1, pulse_interval_secs=60)
++    config = UpdaterConfig(
++      UpdateConfig(batch_size=1,
++                   watch_secs=1,
++                   max_per_shard_failures=1,
++                   max_total_failures=1,
++                   pulse_interval_secs=60))
+     assert 60000 == config.to_thrift_update_settings().blockIfNoPulsesAfterMs
+ 
+   def test_pulse_interval_unset(self):
+-    config = UpdaterConfig(1, 1, 1, 1)
++    config = UpdaterConfig(
++      UpdateConfig(batch_size=1, watch_secs=1, max_per_shard_failures=1, max_total_failures=1))
+     assert config.to_thrift_update_settings().blockIfNoPulsesAfterMs is None
+ 
+   def test_pulse_interval_too_low(self):
+     threshold = UpdaterConfig.MIN_PULSE_INTERVAL_SECONDS
+     with raises(ValueError) as e:
+-      UpdaterConfig(1, 1, 1, 1, pulse_interval_secs=threshold - 1)
++      UpdaterConfig(UpdateConfig(batch_size=1,
++                                 watch_secs=1,
++                                 max_per_shard_failures=1,
++                                 max_total_failures=1,
++                                 pulse_interval_secs=threshold - 1))
+     assert 'Pulse interval seconds must be at least %s seconds.' % threshold in e.value.message
++
++  def test_to_thrift_update_settings_strategy(self):
++
++    """"""Test to_thrift produces an expected thrift update settings configuration
++       from a PyStachio update object.","[{'comment': 'nit - `s/PyStachio/Pystachio/`', 'commenter': 'shanmugh'}]"
+57,src/main/python/apache/aurora/executor/bin/thermos_executor_main.py,"@@ -54,7 +54,7 @@
+ 
+ app.configure(debug=True)
+ LogOptions.set_simple(True)
+-LogOptions.set_disk_log_level('DEBUG')
++LogOptions.set_disk_log_level('INFO')","[{'comment': 'Would it make sense to leave the default as `DEBUG` for the sake of backwards compat, and use the new option to override it?', 'commenter': 'jcohen'}, {'comment': '+1 please', 'commenter': 'mauri'}, {'comment': ""```\r\nfrom twitter.common.log.options import LogOptions\r\n```\r\nI'm sorry I can not use this well.\r\nCan you give me a hint of what to do?"", 'commenter': 'thinker0'}, {'comment': 'I think during `initialize(options)` you can use the options.disk_log_level that you declared.\r\n\r\n```\r\nLogOptions.set_disk_log_level(options.disk_log_level)\r\n```\r\n', 'commenter': 'mauri'}]"
+57,src/main/python/apache/aurora/executor/bin/thermos_executor_main.py,"@@ -183,6 +183,14 @@
+     help='Maximum number of rotated stdout/stderr logs emitted by the thermos runner.')
+ 
+ 
++app.add_option(
++    '--disk-log-level',
++    dest='disk_log_level',
++    type=str,
++    default='INFO',","[{'comment': 'Default it to DEBUG? and then it can be changed on runtime with `--disk-log-level=INFO` but keep the default for backwards compatibility', 'commenter': 'mauri'}]"
+57,src/main/python/apache/aurora/executor/bin/thermos_executor_main.py,"@@ -183,6 +183,14 @@
+     help='Maximum number of rotated stdout/stderr logs emitted by the thermos runner.')
+ 
+ 
++app.add_option(
++    '--disk-log-level',
++    dest='disk_log_level',
++    type=str,
++    default='INFO',
++    help='Disk Log Level DEBUG/INFO.')","[{'comment': 'What about also specifying the other log levels in the help? DEBUG, INFO, WARN, FATAL, ERROR', 'commenter': 'mauri'}]"
+57,src/main/python/apache/aurora/executor/bin/thermos_executor_main.py,"@@ -183,6 +183,14 @@
+     help='Maximum number of rotated stdout/stderr logs emitted by the thermos runner.')
+ 
+ 
++app.add_option(","[{'comment': 'This option should already exist by default:\r\n```\r\nvagrant@aurora:~$ aurora/dist/thermos_executor.pex --long-help\r\n    --log_to_disk=[scheme:]LEVEL\r\n                        The level at which logging to disk [default: INFO].\r\n                        Takes either LEVEL or scheme:LEVEL, where LEVEL is one\r\n                        of [\'INFO\', \'NONE\', \'WARN\', \'ERROR\', \'DEBUG\', \'FATAL\']\r\n                        and scheme is one of [\'google\', \'plain\'].\r\n```\r\nSo throwing in the following into your scheduler options should already to the trick without the need for code modifications:\r\n\r\n    -thermos_executor_flags=""--log_to_disk=google:INFO .....""\r\n\r\n\r\nThis fixes the `__main__.log` to just contain INFO and above. The  `thermos_runner.log` still contains debug message though. This can be addressed below though.', 'commenter': 'StephanErb'}]"
+57,src/main/python/apache/thermos/runner/thermos_runner.py,"@@ -267,7 +267,7 @@ def main(args, opts):
+ 
+ 
+ LogOptions.set_simple(True)
+-LogOptions.set_disk_log_level('DEBUG')
++LogOptions.set_disk_log_level('INFO')","[{'comment': 'For debugging issues in production, I sometimes really needed those DEBUG logs. I think a saner option would be to remove that line here entirely and instead pass over the log level of the executor. This would provide us with always the same log level in executor and runner, but as a tradeoff this is fair, I think.\r\n\r\nWe currently already pass over the log directory so this should be easy to extend to also pass the current log level https://github.com/apache/aurora/blob/32776792d273b36afbf4a1bab69a66fb06163ffd/src/main/python/apache/aurora/executor/thermos_task_runner.py#L241', 'commenter': 'StephanErb'}]"
+57,src/test/python/apache/aurora/executor/test_thermos_executor.py,"@@ -306,7 +306,7 @@ class TestThermosExecutor(object):
+   def setup_class(cls):
+     cls.LOG_DIR = tempfile.mkdtemp()
+     LogOptions.set_log_dir(cls.LOG_DIR)
+-    LogOptions.set_disk_log_level('DEBUG')","[{'comment': 'This is only used in tests. Debug logs would still be helpful here.', 'commenter': 'StephanErb'}]"
+57,src/test/python/apache/aurora/executor/test_thermos_task_runner.py,"@@ -66,7 +66,7 @@ class TestThermosTaskRunnerIntegration(object):
+   def setup_class(cls):
+     cls.LOG_DIR = tempfile.mkdtemp()
+     LogOptions.set_log_dir(cls.LOG_DIR)
+-    LogOptions.set_disk_log_level('DEBUG')","[{'comment': 'This is only used in tests. Debug logs would still be helpful here.', 'commenter': 'StephanErb'}]"

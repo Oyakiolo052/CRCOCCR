@@ -1,0 +1,11 @@
+Pull,Path,Diff_hunk,Comment
+127,addons/models/3000-Cloud/patches/007-s3_v2_update_attributes.json,"@@ -0,0 +1,23 @@
++{
++  ""patches"": [
++    {
++      ""id"": ""TYPEDEF_PATCH_3000_007_001"",
++      ""description"": ""Update objectPrefix isUnique for aws_s3_v2_directory to false"",
++      ""action"": ""UPDATE_ATTRIBUTE"",
++      ""typeName"": ""aws_s3_v2_directory"",
++      ""applyToVersion"": ""1.1"",
++      ""updateToVersion"": ""1.2"",","[{'comment': ""Please change the aws_s3_v2_directory's objectPrefix attribute at 3030-aws_s3_v2_typedefs.json file too and change the typeVersion. The patch file will ensure the model upgrade for older version and the new installation will be created with newer version from 3030-aws_s3_v2_typedefs.json "", 'commenter': 'sidharthkmishra'}]"
