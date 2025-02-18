@@ -1,0 +1,1373 @@
+project,pullNumber,CCR,Author_response,f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13
+accumulo,1851,A hard-coded date could of `1/4/21` could generate data that is very confusing when run at some point in the future.,You mean if the test were to ever print/log this data?,1,1,1,1,1,0,0,1,1,0,0,0,0
+accumulo,2518,"Rather than allowing these types to be exposed in our SPI, why not refactor to avoid exposing the Hadoop types? Do we really need these types? Can we use our own analogous ones? Or can we avoid them entirely, deferring to the plugin implementor?","I removed Configuration in c377cb8. I don't really see an easy way to remove the others since the goal of the plugin is to provide a Codec / Compressor / Decompressor. If we internally were not using Hadoop Codecs, then I think this would be much easier to accomplish. Is that what you are suggesting, that we move the internal implementation away from Hadoop Codecs?",1,1,1,1,1,0,0,0,1,0,0,0,0
+accumulo,868,"What about always checking if these are non-null and stopping them if they are?
+
+Checking the configuration for the property (while it should always be accurate) has the potential to introduce a bug where we could just check everything and be certain it's all stopped.","I am not sure what you are asking.  Are you saying, kill the timer watch threads once the replication.name is set?",1,1,1,1,1,0,0,0,0,1,1,0,0
+accumulo,2255,"This might be able to be simplified by just using the substring method. Also it doesn't seem like this accounts for strings where there are more than 2 ':' characters (not sure if that will ever be the case), for example `a:c:d:e` would be sent to the `else` branch and possibly handled incorrectly. ",so if we go the cf and cq route do we get rid of -c or keep it ?,1,1,1,1,1,0,0,1,0,0,1,1,0
+activemq,679,@mattrpav per your comment it also appears `isPassiveSlave` is not used. We could also remove this it seems like?,@mattrpav per your comment it also appears `isPassiveSlave` is not used. We could also remove this it seems like?,1,1,1,1,1,1,0,0,1,0,0,0,0
+activemq-artemis,1775,"please make this an enum so it can be set to null, DURABLE or NON-DURABLE, currently this is just true or false, and overrides the durablitly no matter what in code as whilst in the XML parser it reads Boolean later in code its just operating on boolean. (default behaviour should be existing behaviour) ","Please, would you be so patient and explain me, how to do this? I have implemented enum (in latest commit), but I don't think so it is what you intended.",1,1,1,1,1,0,1,1,0,0,0,0,0
+activemq-artemis,2666,You can create directly the FileChannel without using FileInputStream,Could you elaborate this? I thought FileChannel can only be created by FileInputStream/FileOutputStream/RandomAccessFile.,1,1,1,1,1,0,0,1,0,0,1,1,0
+activemq-artemis,2666,You don't need the buffer parameter here: we already have an API to write just buffers: just create a specific API for the file case,"Do you mean we call write twice, first write buffer api, second new write file api in channel::send()? This way we will call netty channel::writeAndFlush twice, right?",1,1,1,0,1,0,0,1,0,0,1,0,0
+ambari,951,"Would it be possible to test this without guice, just by passing the dependencies via constructor?",We need Guice anyway...either the field would be injected or the constructor...how else would you get `TopologyHolder`? Please note this a Singleton scoped Guice bean.,1,1,1,0,1,0,0,1,0,0,1,0,0
+ambari,476,"Since this is a part of the constructor, care should be taken to allow for nulls for a background operation lets say that is not initiated by a user.","AuthorizationHelper.getAuthenticatedName() returned ""internal"" in such cases, as far as I could see. 
+Should I just allow nulls?
+Should I move the AuthorizationHelper.getAuthenticatedName() call out of the constructor? ",1,1,1,0,1,0,0,1,1,0,1,0,0
+ansible_ansible,49432,"Just for clarity when reading the code, this should probably be broken out into multiple lines. It's a bit too long for a simple ternary (imo).","Would this be more appropriate ?
+```
+if task.check_mode or (task.check_mode is None and context.CLIARGS['check']):
+  checkmsg = "" [CHECK MODE]""  
+else 
+  checkmsg = """"
+```
+
+
+I prefer the compact one line form for such a simple assignment statement. Also there are other long lines e.g.
+```
+if (self._display.verbosity > 2 or '_ansible_verbose_always' in result._result) and '_ansible_verbose_override' not in result._result:
+```",1,1,1,0,0,0,1,1,0,0,1,0,0
+ansible_ansible,54235,Requirements for individual integration tests should be installed during the test.,I mean where I would to add dependencies.,1,1,1,0,1,0,0,0,1,1,0,0,1
+apex-core,445,Why is it necessary to have an attribute for this. Back pressure should work automatically.,"@vrozov I don't quite understand your example. If it is aggregation won't the operator emit less data. Do you mean like accumulation into a big collection as opposed to aggregation? Also, having back pressure doesn't mean no spooling, data can still get spooled once the subscribers have read the data. 
+
+If we have back pressure as a per port setting, the first operator in the graph traversing from the input, that has the setting turned on will get blocked and its upstream operators will move forward and continue to process data. I don't see a big benefit to this as opposed to turning it off at a DAG level as the application would be pulling data in from the input source anyway.",1,1,1,0,1,1,1,1,1,0,1,1,0
+avro,1565,Sort the list plz,Alphabetical?  Would you also like me to make a comment in there to say that it should be sorted in a certain way?,1,0,1,0,1,0,0,0,1,0,0,1,0
+avro,133,"this might break the usage of GetName in exisitng usage.
+Not sure if we would want to make the function an internal use only.
+","I wasn't 100% sure on this one, because `get_name` is already a function. When I did a usage search for `GetName`, the usages looked to be all within this file. When I searched for `get_name`, it seemed like other modules were using it.
+
+Being that the existing `get_name` function delegates to this one, I think the functionality is still available for external use.
+
+Does that seem appropriate to you? What are your thoughts?
+",1,1,0,0,1,0,1,1,0,0,1,0,0
+beam,951,"Are you able to look at the failure reason in addition to checking job state?
+
+This way it closes a race condition where the job reaches a terminal condition between the fetching state and cancel calls
+","Do you mean that look at the IOException from execute() calls? Got confused how it will help to stop the race condition since the race condition is already happened. Or the ""failure reason"" means other messages?
+",1,1,1,0,1,0,1,1,0,0,0,0,0
+beam,25824,How will these jars get staged for runtime ?,"I'm not sure I understand your question entirely.
+
+These jars should be staged in each worker when the datasource is built",1,1,1,0,1,0,0,1,0,1,0,0,0
+beam,7921,"Is it safe to combine the cloud.google.com API with the V2 API?
+
+Be warned: It's not currently simple to add new Go dependencies, due to gradle and jenkins etc, the lock file will need updating if the v2 package isn't already getting vendored.
+There's a low priority task to move to Go Modules instead which would make it easier for everyone involved, but that's a hairy mess WRT beam right now. I can provide more details if necessary.","Internally the cloud api includes v2 api, so I would assume it would be safe, but honestly, this is beyond my depth of the overall build system.",1,1,1,0,1,0,1,1,0,0,0,1,0
+beam,15827,Not sure how to handle the `skipna=False` case when there are NaNs in the DataFrame or Series. The expected type is different from the proxy's type. I don't know how it can be inferred. @TheNeuralBit Do you have any examples of how this can be done?,Not sure how to handle the `skipna=False` case when there are NaNs in the DataFrame or Series. The expected type is different from the proxy's type. I don't know how it can be inferred. @TheNeuralBit Do you have any examples of how this can be done?,1,1,0,0,0,0,0,1,1,1,1,1,0
+beam,8104,I would move the methods you want people to implement to be at the top and hide the static methods in a different class inside the beam-fn-execution package.,I moved the static methods to `org.apache.beam.sdk.fn.BeamWorkerInitializerHelpers` - is that what you had in mind?,1,1,1,0,1,0,0,1,1,1,1,0,1
+beam,1780,"How about also `containsOnlyClassesInPackages(String...)` and `containsOnlyPackages(Iterable<? extends String>)`, which I think would be the most common uses anyhow.","Just to make sure I get it right, what's the difference between `containsOnlyClassesInPackages` and `containsOnlyPackages`? At the moment we only match exposed classes, so isn't ""contains classes"" the same as ""contains packages""?",1,1,1,0,1,0,0,1,1,0,1,0,0
+beam,9381,"Unfortunately, I've found no better solution than recreating the cluster with a new number of workers. We can get back to this as soon as we find another way of scaling down the cluster. WDYT?
+
+This code here is repetitive but it will be fixed in the ongoing refactor.",I'm afraid reusing `teardownDataproc` is not possible because it appends cluster deleting to postBuildScripts. `setupFlinkCluster` on the other hand is troublesome (due to large number of arguments) and redundant (env variables are preserved because `context` is the same entity).,1,1,1,0,1,0,0,1,1,0,1,0,0
+beam,8159,(similar to above comment),I think such extension would be really useful. Do you know what kind of changes would be necessary to do it? Who could help?,1,1,1,1,0,1,0,1,1,0,1,0,0
+beam,23492,group by statefamily and tag at once?,"Do you mean to do something like this `Collectors.groupingBy(makePair(StateTag::getStateFamily, StateTag::getTag))`? So the groupped result is a `Map<Pair<String, ByteString>, List<StateTag<?>>>`? This doesn't seem to be much better.",1,1,0,0,0,0,1,1,1,1,1,0,1
+beam,9417,I suppose this does not have automtatic module name because people are not suppose to build from it? We should probably document this as part of `setAutomaticModuleName`in `BeamModulePlugin.groovy`. In what particular reasons we do not set automatic module names. I suppose this will be the case also for some test pure modules like the Elasticsearch ones.,"I'm still not 100% sure if we should leave modules without these headers, to be honest. My motivation was to skip it in aggregated docs (javadoc module), examples and testing modules because we know that people should not depend on it (do we?). I also find it as a form of discouragement to depend on them so but a very weak one. ",1,1,1,0,1,0,0,1,1,0,1,0,1
+beam,13691,"We still use these here: https://github.com/apache/beam/blob/0c01636fc8610414859d946cb93eabc904123fc8/sdks/java/core/src/main/java/org/apache/beam/sdk/util/ReleaseInfo.java#L107
+
+Can we make `docker_image_default_repo_root` and `docker_image_default_repo_prefix` inputs as well?","I can see that `docker_image_default_repo_root` is still used in this codebase and this file, but it isn't used as a replacement token in the processResource task from what I can see. Perhaps I am missing something though. Can you explain where the `docker_image_default_repo_root` is replaced or how it is used?",0,1,0,0,1,0,0,0,0,1,1,0,0
+beam,23662,Any reasons to make it nullable?,"There's a comment: `// TODO(nausharipov): markdownStyle is nullable, because I don't know what to set here`",1,1,1,0,0,0,0,1,1,0,1,0,0
+beam,5262,Consider defining an interface which is effectively a Consumer<JobState.Enum> instead of this being a StreamObserver.,"Can you expand on the motivation a little? By doing this, aren't we removing the possibility of the stream indicating an error?",1,1,0,0,0,0,0,1,0,0,1,0,0
+beam,1261,I understand that you need to have `setStateInternalsFactory` in order to use this with `DoFnTester`. But all non-test code should follow the normal pattern of passing dependencies to the constructor.,"If I'm using ParDoEvaluator to evaluate processFn at all, I'm not sure how I can pass stateInternalsFactory, timerInternalsFactory and outputWindowedValue to the constructor - they are different in every bundle. Do you have suggestions?",1,1,1,0,1,0,0,1,1,0,1,0,0
+beam,2947,"why we need a profile?
+
+i think the whole story would be cleaner if we just had two executions, no profiles.","Obviously having a base set of pipeline options and hacking it (the JSON?) a bit in each execution was my first thought. Off the top of my head, I don't know a good way to do it cleanly. I can think of hacks (like extra side channels). Do you have suggestions?",1,1,1,1,0,0,0,1,1,0,1,0,0
+beam,7737,"Can we add a exhaustive test for dynamic work rebalancing similar to following (using mocks for BT) ?
+https://github.com/apache/beam/blob/master/sdks/python/apache_beam/io/textio_test.py#L386","About this test, I getting some errors when the assert use the try_split with `0.0` fraction and get the position, and when trying to get the try_split result of the bundle `[b'', b'beam_key2')`, and set the `b''`(first element) and get a `ValueError: Split at '' not in range ['', 'beam_key2']` error.
+I don't know why I getting that error ",1,1,1,0,1,0,0,1,0,0,0,0,0
+beam,3447,Pull this into a shared getNumericSqlTypeCoder method that MAX and MIN can both use?,"can you give more hints, do you mean a helper function for subclass? Don't think it can be called in `BeamSqlUdaf.getAccumulatorCoder()` as no guarantee that `AccuT` is one of Beam SQL type.",1,1,1,0,0,0,0,1,0,0,1,0,1
+beam,12541,Why upload the whole directory here instead of a globstar? Just curious.,"I am not sure did I understand. Is question about why there is `examples/java/build/reports/tests/integrationTest` instead of `examples/java/build/reports/tests/integrationTest/**`?
+I it was a question, I will simplify paths for `java_unit_tests` logs paths to avoid unnecessary globstar.
+",1,1,0,0,1,1,0,0,1,0,1,1,1
+beam,25685,We should get supported versions from JavaTestProperties .SUPPORTED_VERSIONS instead of hardcoding here.,Not sure how I can access JavaTestProperties from BeamModulePlugin. Should I create a new property in `gradle.properties`?,1,1,1,0,1,0,1,0,0,0,1,1,1
+beam,11274,"If you don't use a closure, I think you can make this function a top-level one. It would be easier to understand the program flow.",@kamilwu do you mean  init_input function? Would it be preferable to start it with underscore to indicate it shouldn't be used outside of the class?,1,1,1,0,1,1,0,0,1,0,1,0,0
+beam,2605,"At this point, let's do the right thing and make this private with factory methods. I would suggest `empty()` and `default()`. Maybe also `coreOnly()` which has the coders from the core SDK but does not automatically load any others.","I don't see how anything but load all the coders is what a user would want, can you mention when empty()/coreOnly() would ever be used?
+
+Except for one test, everywhere was (seems silly that we didn't just auto-register everything everytime).
+x = new CoderRegistry()
+x.registerStandardCoders()
+
+Unfortunately default is a key word in java, went with createDefault",1,1,0,0,1,0,0,1,1,0,1,0,1
+beam,5481,"This is too specific for a test. Changes that are totally OK can break it easily. I think you just want to make sure this query can actually run, not crash, right?
+
+",I think we want to do is testing those rules do not cause any exception when parsing sql.  Could we assert the test doesn't throw any exception?,1,1,1,0,0,0,0,1,1,0,1,0,0
+beam,8961,TimestampedValue already implements `__lt__.` If it's missing an ordering function maybe we should add it there.,"`TimestampedValue` does implement comparisons, but those comparisons are done  based on the value rather than the timestamp. Here, we want the values with the oldest timestamp to come first. Would you think that changing the name of this class would make our intention more clear?",1,1,1,0,1,0,0,1,1,0,1,0,0
+beam,14338,drive-by: could you include the Postgres documentation link in this comment?,So we would store the `config`parameter passed in `withDataSourceConfiguration`? What would be the path to retrieve this parameter from it?,1,1,1,0,0,0,1,0,0,0,1,1,0
+beam,10126,"We could run teardown at the end of the test and ensure that no additional output has been added, ditto for the ones below.","Sorry, I don't think I fully understand what you mean. Can you explain it more? :)",1,1,1,0,1,0,0,1,1,0,0,0,0
+beam,15540,Why drop serializable?,Was messing with some stuff attempting to get the test working. Forgot to re-add. Though as an aside I'm not sure why this is necessary since everything seems fine with out.,1,1,1,0,1,0,0,0,0,0,1,0,0
+beam,3661,This will break in the presence of non-trivial triggers/merging windows; at least test and throw an error in that case?,Added these restrictions and added a link to a JIRA. So I think we cannot allow merging windows/non-trivial triggers since the GBK inserted by the framework will result in unexpected window merging/trigger firing. Is my understanding correct ? If so do we have to impose these restrictions when we insert GBK transforms at other places as well ?,1,1,1,1,1,1,0,1,0,1,1,0,1
+bookkeeper,2214,"I think the information should be designed in a way for extensibility rather than just putting key/value pairs in the znode.
+
+Here is something I have in my mind:
+
+```
+listeners:
+    - name: 'internal'
+       hostname: internal_ip
+       port: port
+       type: bookie
+    - name: 'external'
+       hostname: external_ip
+       port: port
+       type: bookie
+    - name: 'external_tls'
+       hostname: external_ip
+       port: port
+       type: bookie+tls
+    - name: 'http'
+       hostname: ip
+       port: port
+       type: http
+network_address:
+       path: ""/region/rack/host""
+properties:
+       'user-key': 'user-val'
+```","So you are thinking about a more strongly typed structure ?
+
+```
+class BookieServiceInfo {
+      class Endpoint {
+           String name;
+           String hostname;
+           int port;
+           String type;
+      }
+      Map<String, Endpoint> endpoints; (name => endpoint, no duplicate names allowed)
+      String networkAddress;
+      Map<String, String > properties;
+     
+     public void addEndpoint(Endpoint endpoint) ....
+     public void setProperty(String key, String value)...
+     public void setNetworkAddress(String networkAddress) .....
+}
+```
+
+I like this idea.
+I am not sure about the ""network_address"" example, 
+I see value in ""region"" and ""rack"", maybe as separate values
+
+Anyway I would defer introducing those concepts in a first implementation, because it deserves a discussion about how to migrate from the current script based approach
+
+Is it okay for use to use JSON format ?",1,1,1,0,0,0,1,1,0,1,0,0,1
+bookkeeper,1621,Don't you loop on the chain? Thinking about ExecutionException for instance...,I don't understand the question,1,1,1,0,1,0,1,1,1,1,0,0,1
+bookkeeper,350,"> clients need their own key and certificate
+
+If you only want to do encryption, in general there's no need for the client to configure a certificate. A self-signed certificate should be created on the spot. (I have not checked if it's actually true in the current implementation)",yes. the subsequent sentence explains `key` is for encryption and `certificate` for authentication. is that enough? can you guys suggest a better structure for explaining that?,1,1,0,1,0,0,0,1,0,0,1,0,0
+bookkeeper,2257,"Is is too ambiguous.
+We ate not sure that only the last line threw this exception.
+
+Please move the assertion exactly around the expected invocation ",This annotation works at a class level -- not sure how I can make it to the specific line?,1,1,1,0,0,1,0,0,1,1,1,1,0
+bookkeeper,2636,This is problematic since it is done during Gradle's configuration phase.,"I am not sure I understood this, as what you mean by gradle's configuration phase, and why it is problematic. ",1,1,1,0,0,0,0,1,1,1,1,0,1
+bookkeeper,1866,Use constant for '3' ?,what would you name such a constant?,1,1,0,0,1,0,0,1,0,0,1,0,0
+bookkeeper,742,"please define CONSTANT for `1`
+
+or `flagValue & DEFERRED_FORCE.getValue() == DEFERRED_FORCE.getValue()`","used DEFERRED_FORCE.value, it is private, maybe more efficient ? ",1,1,0,0,1,0,0,1,0,0,1,0,0
+bookkeeper,2180,"can you please  check the usages of this method ?
+I found usages of it as the result was as nullable Long instead of a primitive long","hey @eolivelli both in the existing code and the change I made, getFirstStoredEntryId returns primitive long value. I'm not sure what you are referring to.",1,1,1,0,0,0,0,1,1,0,1,1,0
+calcite,1102,"Currently the cursor function accesses the `ordinal`th element from the top of the stack. So, if we create a table function with two inputs, the left input will be cursor(1) and the right input will be cursor(0).
+
+But we actually want them to be the other way around.
+
+I suggest that you add an `inputCount` parameter (see: `field(inputCount, inputOrdinal, fieldOrdinal)`). Thus the left input would be `cursor(2, 0)`, and the right input would be `cursor(2, 1)`.
+
+By the way, it is correct to call `peek` here. But `functionScan` should call pop for each input.",Will do. But I am curious about why doing like that.,1,1,1,0,1,0,1,0,1,0,1,0,0
+calcite,471,Could you move the three ```break;``` clauses to the end of the ```case``` block? No need to have three.,"I am not sure what do you mean. Do you prefer:
+```java
+case FLOAT:
+  //fallthrough
+case PRIMITIVE_FLOAT:
+  //fallthrough
+case PRIMITIVE_DOUBLE:
+  //fallthrough
+case NUMBER:
+  //fallthrough
+case DOUBLE:
+          if (s.equals(""Infinity"")) {
+            rowBuilder.set(i, Double.POSITIVE_INFINITY);
+            break;
+          } else if (s.equals(""-Infinity"")) {
+            rowBuilder.set(i, Double.NEGATIVE_INFINITY);
+            break;
+          } else if (s.equals(""NaN"")) {
+            rowBuilder.set(i, Double.NaN);
+            break;
+          }
+        //fallthrough
+        default:
+```
+or just:
+```java
+  case FLOAT:
+  case PRIMITIVE_FLOAT:
+  case PRIMITIVE_DOUBLE:
+  case NUMBER:
+  case DOUBLE:
+          if (s.equals(""Infinity"")) {
+            rowBuilder.set(i, Double.POSITIVE_INFINITY);
+            break;
+          } else if (s.equals(""-Infinity"")) {
+            rowBuilder.set(i, Double.NEGATIVE_INFINITY);
+            break;
+          } else if (s.equals(""NaN"")) {
+            rowBuilder.set(i, Double.NaN);
+            break;
+          }
+         //fallthrough
+        default:
+```
+I think the first one is what you mean, but it seems a little bit cumbersome. The second is good enough to clarify the confusion in here.",1,1,0,0,1,0,0,1,1,0,1,0,0
+calcite,3145,I agree with Julian that we don't need a new module; putting the tests in plus makes sense.,"I am not sure what ""plus"" is. Should I just move the code into the plus project using the org.apache.calcite.slt package?",1,1,0,0,0,1,0,1,1,1,1,0,1
+calcite,478,"This might not be correct, since a Project below the Aggregate might rename the columns.
+
+In fact, you should rely on _checkAggregateOnMetric_ method in DruidQuery, passing in the first parameter an ImmutableBitSet with the references used by the aggregateCall.",I don't see a field inside of `AggregateCall` of type `ImmutableBitSet`. Did you mean the aggregateCall's `argList` (type `ImmutableList<Integer>`)?,1,1,1,0,1,0,0,1,1,1,1,0,0
+calcite,2559,"if there is concrete implementation, can we add some sql tests?  
++ doesn't seems mentioned in the spec, but does it interact with filter clause etc.","Could you please a bit elaborate what kind of tests do you mean?
+e.g. like that 
+https://github.com/apache/calcite/pull/2559/files#diff-cb3257551f96f6523e9c4464d9359b21b0408ccfb7315955f97a59b45546bc1cR5790-R5799 ?",1,1,0,0,1,0,0,1,0,1,0,0,0
+calcite,2724,"I'm suspect whether we should remove the parentheses?
+If the SQL is :
+```
+""SELECT \""product_id\"" FROM \""product\""""
+        + ""UNION ALL\n""
+        + ""(SELECT \""product_id\"" FROM \""product\"")\n""
+        + ""INTERSECT ALL\n""
+        + ""(SELECT \""product_id\"" FROM \""product\"" WHERE \""product_id\"" > 10)""
+```
+```
+SELECT \""product_id\""
+FROM \""foodmart\"".\""product\""
+UNION ALL
+SELECT *
+FROM (SELECT \""product_id\""
+FROM \""foodmart\"".\""product\""
+INTERSECT ALL
+SELECT \""product_id\""
+FROM \""foodmart\"".\""product\""
+WHERE \""product_id\"" > 10)
+```
+
+I think it has become unclear? So maybe we should stay the parentheses?
+",Do you mean we should retain it when there is a `where` condition? Or we always retain parentheses?,1,1,1,0,1,0,1,1,0,0,0,0,1
+calcite,471,Could you move the three ```break;``` clauses to the end of the ```case``` block? No need to have three.,"The reason I put break in each branch is because when the String calcite received is not ""Infinite"", ""-Inifinty' and ""NaN"", it is possible that the String is a String representing float number. This case will be dealt in the default branch. I can change it to a switch cases to keep this logic. Or is it actually all return of Float calcite type can only be String when return is one of ""Infinity"", ""NaN"" and ""-Infinity""?",1,1,1,0,1,0,0,0,0,0,1,0,0
+calcite,2365,Please move the precondition to `matches` method,"Do you mean that the usage of the precondition is same as `RelOptRule`?
+The usage of the two is different here, you can refer `org.apache.calcite.plan.SubstitutionVisitor.JoinOnLeftCalcToJoinUnifyRule`.
+
+
+
+
+
+",1,1,0,0,1,0,0,1,1,0,1,1,0
+calcite,2559,If any input argument is `NULL` the function returns `NULL`? According test in SqlOperatorBaseTest. The test return value is different. Or did I misunderstand?,"Not sure what exactly you are referring to... Probably this
+```
+    tester.checkScalar(
+        ""array_concat(array['hello', 'world'], array['!'], array[cast(null as char)])"",
+        ""[hello, world, !, null]"", ""CHAR(5) ARRAY NOT NULL"");
+    tester.checkNull(""array_concat(cast(null as integer array), array[1])"");
+```
+
+The key difference here is that in the first test there are elements `array['hello', 'world', '!']` and `array[null]` while in the second there are `null` and `array[1]`.
+So the tests check that if argument is null then return `null` however if an argument is a collection containing `null` value it should do normal concatenation.
+
+In case you are referring to something else please elaborate",1,1,1,1,1,0,0,1,0,1,0,1,0
+camel,2093,"The rest is just unit tests and tooling so its not as important as runtime camel-core etc. However the changes are fine to do, but maybe favor using `{}` style","In general, you do not recommend increasing complexity with the if statement. right? ",1,1,1,0,0,0,0,0,1,1,1,0,0
+camel,8661,"Maybe describe the error that caused the problem. Something like: `LOG.error(""There was an error opening the {} repository: {}"", endpoint.getLocalPath(), e.getMessage);` 
+
+Or ... just wrap the exception. ","`LOG.error(""There was an error opening the {} repository: {}"", endpoint.getLocalPath(), e.getMessage);` This will create a sonar issue.
+
+So wrap on wich exception?",1,1,1,1,0,0,0,1,1,1,1,0,0
+camel,2995,This is part of the javadoc.. you need to modify the javadoc and rebuild,when I use mvn package command every change I did revert back to where I was before.How can I fix that?,1,1,1,1,1,0,0,1,0,0,1,0,0
+camel,11906,Is all this code in the constructor? If so it should be moved to doInit where you do all kind of initialization,"Apologies, but I am not sure what you mean.  It looks like you are referring to the code in `doInit()`, so I must be misunderstanding you.  Could you please clarify?",1,1,1,0,1,0,0,1,1,1,1,0,0
+camel,5177,We need to make @Converter(allowNull = true) as the converter can return null as a valid response,"I did not explain myself properly, sorry. I was meaning that according the documentation, when the converted value is expected to be a _miss_ then `null` should be returned. If `null` is allowed to be a valid response, then, we should include the annotation as you said. In this case, `null` won't be a valid response, but just a _miss_, so I understand that the annotation is not needed. At least, this is what I understood from the doc, or am I misunderstanding something?",1,1,1,0,1,0,0,1,1,1,1,0,1
+cassandra,745,"It's better to keep implementation details out of these docs, I think - I'm not sure it's necessary to specify that a UDT is a form of tuple.  Much as I like it, I think docs should also perhaps use less interesting language? (so ""on steroids"" might better be avoided, but just my 2c)","Hey, @blerer! Thanks for the review!
+Do you have any suggestions on how should I write this? I thought the aforementioned suggestion was fine, but I'm not sure how to improve it. :confused:",1,1,1,0,0,0,0,1,1,0,1,1,0
+cassandra,1454,"still wondering if possible to have 1 node be a follower and not; doesn't make sense to stream to yourself, but not sure if that is actually blocked or not... wondering if I should make this `(id, follower)`","still wondering if possible to have 1 node be a follower and not; doesn't make sense to stream to yourself, but not sure if that is actually blocked or not... wondering if I should make this `(id, follower)`",1,1,1,0,1,0,0,1,1,0,1,0,0
+cassandra,2395,We should preserve the TODO about skipping unselectable nodes,"I think it's sufficiently preserved, above, just above the switch statement? Unless you mean something else.",1,1,1,0,0,0,0,1,1,0,1,0,0
+cassandra,1567,It is slightly weird to have both the `Supplier` and the `Predicate` here - but i guess its needed due to that `sstablesInBounds` method. Maybe we should add an assertion that `sstablesPredicate.test(..)` returns true for sstables from `sstablesFn`,"not sure about this one, `sstablesFn` is called when compaction is paused, so if I call earlier than that could that not cause problems?  Unless I call early not sure how to get access to the SSTables",1,1,1,1,1,0,0,1,0,0,1,0,0
+cassandra-java-driver,1241,"I am not sure why in JIRA ticket there was info that we need to handle `NullSavingStrategy` for `@Query`.
+In `QueryIT` I see that all queries are `SELECT` or `DELETE` so `nullSavingStrategy` has no influence over them.
+Do we plan to support `INSERT ..` in `@Query` annotation?","I am not sure why in JIRA ticket there was info that we need to handle `NullSavingStrategy` for `@Query`.
+In `QueryIT` I see that all queries are `SELECT` or `DELETE` so `nullSavingStrategy` has no influence over them.
+Do we plan to support `INSERT ..` in `@Query` annotation?",1,1,1,0,1,0,0,1,0,1,1,0,0
+cassandra-java-driver,1242,"I think we are missing test case that does `@Computed(""ttl(v)"")` and `@CqlName(""myttl"")` but cql name is not present in results from the query",You mean just to validate that an exception is thrown if the user provided query does not match the expectation of what the result alias should be?,1,1,1,0,1,0,1,0,0,0,1,0,0
+cassandra-java-driver,1306,"This is semantically a CQL `date` type, why model it as a `varchar`?","I'm not sure, I just reused the KillrVideo data model as-is, and it's how they do it. Maybe they wanted to support legacy versions that don't have `date`.",1,1,1,0,1,0,0,0,0,0,1,1,0
+cassandra-java-driver,982,It would be better to use `PREPARED_METADATA_CHANGES.isSupportedBy(version)` for this test.,"was following the logic in `encode` which checks the protocol version, should we change that to?",1,1,0,0,1,0,0,1,1,0,1,0,0
+cassandra-java-driver,1235,"I am not sure if we should support `USING TTL ?` syntax in the `customUsingClause`. 
+I think we don't need it since we are binding parameters from the method arguments using named parameters","I am not sure if we should support `USING TTL ?` syntax in the `customUsingClause`. 
+I think we don't need it since we are binding parameters from the method arguments using named parameters",1,1,1,0,0,0,0,1,0,0,1,0,0
+cloudstack,4847,"@Spaceman1984 should the source be the guest network ?
+
+refer to https://github.com/apache/cloudstack/pull/3907/files","I'm not sure I understand what you are asking. The way it is now, port 80 and 443 are only open from within the guest network.",1,1,1,1,0,0,0,1,0,1,1,1,0
+cloudstack,3430,Code formatting for this section of code is different ( spaces used ),Do you mean ` if( network.getTrafficType()....` should be reformatted to ` if (network.getTrafficType()....`?,1,1,1,0,0,0,0,1,1,0,1,0,0
+commons-collections,160,Introduced new formatting,I can not figure out how to get Eclipse to format the line so that the continued array initialization (line 67 above) is not indented an extra 4 space.  Anyone have any idea how to do this?,1,1,1,0,0,0,0,0,1,1,0,0,0
+commons-io,500,"Just a thought, but is it possible to use `tempDir.charAt(tempDir.length() - 1)` and `File.separatorChar`?",what do you mean? you want  ln1468 changed to use `File.separatorChar` ? what would be the difference?,1,1,1,0,0,0,0,0,1,0,1,1,0
+doris,333,I think `RoutineLoadManager` is better.,Why `Load` not use `LoadManager`?,1,1,1,0,0,0,0,1,1,0,1,0,0
+drill,2445,"I don't think it is safe to set `UserSession` in this way. For the case when we have concurrent queries, `UserSession` from one user could be set, and before it is used, another user can override it...","Do you think the right approach here would be to update the `UserSession` here?   If so, we'd still need the setter.  ",1,1,1,0,1,0,0,1,0,0,1,0,0
+drill,2238,"Specifying the `NULL` type here may cause issues later when this type is used for obtaining values comparator... 
+But do we actually support partitioning list columns, i.e. if `majorType` is null, maybe we should set `partitionColumn` to false instead of calling the `checkForPartitionColumn()` method?","@vvysotskyi 
+I've add a if condition in `checkForPartitionColumn`. Do you mean like this?",1,1,1,1,0,1,1,0,1,1,1,0,0
+drill,2044,"It's better to use here DCL to avoid constant synchronization.
+
+@vvysotskyi @paul-rogers it is ok to call such methods from UDFs? I recall there was some discussions in Jira about scalar replacement. Does it apply here?","What do you mean with DCL?
+I happy to change the code if needed.",1,1,1,0,1,0,0,1,0,1,1,0,1
+drill,1641,"There is overloaded `sqlQuery(String query, Object... replacements)` method.","Not sure why this should be used - I find the concatenation fine. If you have any objections, please feel free to point it out.
+Just to be sure, do you mean to have the base query with `%s` so the additional part should be formatted (well, passed to the method as the second parameter)?",1,1,1,0,1,0,0,1,0,0,1,1,0
+drill,2432,Not sure 2500 is enough. Drill can use more memory. If you will run several times tests with this configs sucesfully - it is fine. Otherwise try to decrease slightly - 100-200Mb,"@vdiravka do you mean _increase_ slightly?  So heap = 2000, direct = 2700?",1,1,1,0,0,0,1,0,1,0,1,1,0
+druid,9863,"Maybe also print a message indicating this is the list of all files, etc.","Travis already echos the command to the log: https://travis-ci.org/github/ccaominh/druid/jobs/686402944#L5741
+
+Does that accomplish what you had in mind?",1,1,0,1,1,1,0,1,0,0,0,1,0
+druid,7067,"Logic is changed. Now prints `val` and `val`. Maybe easier to rewrite this code by using `new TreeMap(valueMap)` and then iterating that map, instead of moving to an ArrayList and sorting.","So what this function is actually doing? Will this suffice ?
+`  
+    for(Integer val: valueMap.values() {
+          System.out.println("" VAL: "" + val + "" CNT: "" + val);
+        }
+`",1,1,1,0,1,0,0,1,1,0,1,0,0
+druid,8190,suggest `ParentNode` instead to make it more clear what the annotation relates to,Hmm I want to make it consistent with `Self`. Do you want me to rename it as well? I guess javadoc is pretty clear now that it relates to `DruidNode`.,1,1,0,0,1,0,0,1,0,0,1,0,0
+druid,13647,Just checking whether 6 GB should be changed to 16 GiB?,@findingrish can you help clarify here? thanks!,1,1,1,0,0,0,0,1,0,0,1,1,0
+druid,4341,"Despite it's documentation, `abandonSegment()` is called *not* only from `mergeExecutor`, so races between `persistAndMerge()` and `abandonSegment()` are possible. It should be resolved before merging this change, because it may lead to JVM crashes.",could you explain more on the race condition? @leventov,1,1,1,0,1,0,1,1,0,0,0,1,1
+druid,4079,"So if we get those fields with subclasses different from the original object then we still get the first mapping and ignore the second implementation and eventually get unexpected/different results on dash, right?","Didn't understand this question. However any implementation of `inspectRuntimeShape()` anywhere doesn't affect correctness.
+
+The purpose of `inspectRuntimeShape()` is to ensure that some copy of the code is always called with the same runtime shape (monomorphic), and (ideally) there is only one copy of the code for each runtime shape, not to make JIT perform the same compilation work twice and waste code cache (on Hotspot level) and instruction cache (on hardware level).
+
+Not reflecting all fields which actually belong to runtime shape in `inspectRuntimeShape()` could lead to the situation when some copy of the code is called with non-monomorphic runtime shape, that will make Hotspot JIT to generate slower (but still correct) code.
+
+Reflecting some fields which actually don't belong to runtime shape in `inspectRuntimeShape()` could lead to the situation when there are several copies of the code which are called with the same runtime shape, that will pollute code cache and will make JIT to perform the same work several times, but the code is still correct.",1,1,1,0,1,0,1,0,0,1,1,1,0
+druid,8236,https://github.com/code-review-checklists/java-concurrency#justify-volatile,"I don't understand your comment. Do you want me to use the terms defined in the JMM?
+
+I don't think this kind of comment helps. So do you think volatile here is necessary or not?",1,1,0,1,1,0,1,0,1,0,0,1,0
+druid,6606,"Right after it's initialized we propagate all accumulated `nodes` to the listener (old version), in the new version we don't (we propagate only `newNodesAdded`). Could we make javadoc comments to the class which explain the purpose of the new behaviour, why it's better?","I don't understand your question. Could you suggest what Javadoc comment you think should be added and where?
+
+Note: it shouldn't explain anything about the ""old version"", because that code won't exist anymore.",1,1,1,0,1,0,1,0,0,0,1,0,0
+druid,13952,we should never be using both limits I guess. Can we remove the additional 3 params and just pass another param called type ? and re-use the same limit variables ?,"I am not sure of the use case. Theoretically, we can pass both the limits and error the query out if any one of them is reached. Is that the behavior we can encourage or do we want the user to give only one of the limit? ",1,1,1,0,1,0,0,1,1,0,1,1,1
+dubbo,3090,"remove this line.
+:)","I think, I did not understand this one. Which line you wanted me to remove?",1,1,0,0,0,0,0,0,1,1,1,1,0
+dubbo,2703,remove unused imports,"ok,i will remove  it.but I do not know why all checks have failed.could you tell me reason? I have never used travis CI before.",1,1,1,0,0,0,0,1,0,1,1,1,0
+elastic_elasticsearch,48944,"should we omit logging this message when `latestKnownRepoGen.get() == RepositoryData.EMPTY_REPO_GEN`?  In that case, the message is already logged in `getRepositoryData(long indexGen)`
+
+i.e. change the condition to log to `if (genToLoad < latestKnownRepoGen.get()) {`",I'd just keep it simple as is. The only way we get here is by an external process clearing out the repo anyway. Not sure that's worth an additional condition?,1,1,0,0,0,0,0,1,0,1,1,0,0
+elastic_elasticsearch,65792,"I'd like to see a test with multiple arguments that get folded into compound aggs, such as sum / min / max.","Do you mean multiple aggregations inside the PIVOT? Currently there is a check that we can only have a single aggregation inside the `PIVOT`, so we can't have `PIVOT(MIN(salary), MAX(salary) FOR ...)`.
+
+This change only lifts the limitation on the *type* of that single aggregation within the PIVOT, so aggregations that are translated into an `InnerAggregate` will be allowed.",1,1,1,0,1,0,1,1,1,1,0,1,1
+envoyproxy_envoy,2572,I think you can just inline this call.,"Or did you mean adding the `inline` keyword to `v6any_()`, making this a call to a `static inline` function?",1,1,1,0,1,0,0,1,1,0,1,0,0
+eventmesh,4229,"You may give these parameters newlines to improve readability, or create a new local variable to pass the parameter. I would suggest the former.","Do you mean like this?
+
+```java
+private CloudEvent addTimestamp(CloudEvent event, Command cmd, long sendTime) {
+      if (cmd == RESPONSE_TO_SERVER) {
+          return getCloudEvent(event, sendTime,
+              EventMeshConstants.RSP_C2EVENTMESH_TIMESTAMP,
+              EventMeshConstants.RSP_EVENTMESH2MQ_TIMESTAMP,
+              EventMeshConstants.RSP_SEND_EVENTMESH_IP);
+      } else {
+          return getCloudEvent(event, sendTime,
+              EventMeshConstants.REQ_C2EVENTMESH_TIMESTAMP,
+              EventMeshConstants.REQ_EVENTMESH2MQ_TIMESTAMP,
+              EventMeshConstants.REQ_SEND_EVENTMESH_IP);
+      }
+  }
+```",1,1,1,0,0,0,0,1,1,0,1,0,0
+facebook_react-native,33882,I think that the default should be `.enabled`. Previously the `use_flipper!` function was always invoked.,"It was a separated function, so I think it was up to the final user to call it or not, did I miss something?",1,1,0,1,0,0,0,0,0,0,0,0,0
+fineract,283,"If you are reading Entity from NotificationRepository, do we need to have separate readplatform service? Why can't caller directly call method on NotificationRepository? Readplatforms are designed to use JDBCTemplate not Repositories. ",I am trying it as repository wrapper. What name should this class be named? Would it be NotificationGeneratorReadRepositoryWrapper?,1,1,1,0,0,0,0,0,0,1,1,0,1
+fineract,1251,"@vorburger  here, we are checking for all strings that were given to us and make sure none of them returns an Invalid status if it does we return a PlatformApiDataValidationException, does this answer your question? (I might have missed something?)
+
+
+","vorburger  here, we are checking for all strings that were given to us and make sure none of them returns an Invalid status if it does we return a PlatformApiDataValidationException, does this answer your question?",1,1,1,0,1,0,0,0,0,0,1,1,0
+flink,9910,"This builder introduces quite a lot of unrelated changes. I would move them at least to a separate hotfix commit to simplify review as well.
+
+In general, although this minor refactoring reduces the code, it again changes the git history which is arguable because it makes a move back to unnamed method parameters and builder is usually added to name the parameters for readability. All-in-all I would be in favour of not touching it as it is not necessary.","I don't quite understand which are the ""unrelated changes"" that you are talking about? Do you mean the `Builder` class, or the `Builder#newBuilder` factory method, or the setters with 'MB' suffix?
+
+If you mean the `Builder` class, I don't understand how changes to it is unrelated to the changes of `ResourceSpec` that the builder builds.
+
+If you mean the `Builder#newBuilder` factory method, the purpose of them is to make sure `ResourceSpec` is always constructed with explicit cpu cores and task heap memory, which is required by FLIP-49.
+
+If you mean the setters with 'MB' suffix, I think it also makes sense that we remove them and keep those with `MemorySize` arguments only.",1,1,1,0,0,0,1,1,1,0,1,1,0
+flink,5193,Should we also simulate handling multiple closes here?,Do you mean `checkState(!closed)`? Close is encouraged to be idempotent.,1,1,1,0,0,0,0,1,1,0,1,0,1
+flink,2729,"I think there might be a nicer/idiomatic way of doing this check through:
+
+```
+def isSingleton[A](a: A)(implicit ev: A <:< Singleton = null) = 
+  Option(ev).isDefined
+```
+","Thanks!It's quite helpful,could you tell be where do you find this?
+",1,1,1,0,1,0,0,1,0,0,1,0,0
+flink,8215,"Conceptually, what is a retry? If I set it to `0`, would you expect an initial attempt and then no retries? I would interpret it that way and did in `YarnFileStageTest#testCopyFromLocalRecursive()`","And could you clarify by ""did in YarnFileStageTest#testCopyFromLocalRecursive()""? Are you suggesting testing the retry on `FileNotFoundException`? I think currently Flink is using a real S3 filesystem instead of a mock, so I am not quite sure how to do it.",1,1,1,0,1,0,0,1,0,1,1,1,1
+flink,4826,"This class has actually little to do with latency. It's just a wrapper for a DescriptiveStatistics that we happen to use for measuring latency, as such i would rename the class/fields, and move it out of the latency namespace.","I do not know how to change, could you give some suggestions?",1,1,1,0,0,0,0,1,1,0,1,0,0
+flink,22457,Can it be replaced by `MiniClusterExtension`?,"For `HAQueryableStateFsBackendITCase` and `HAQueryableStateRocksDBBackendITCase`, the initialization of `MiniClusterExtension` rely on `@Tempdir`, which will cause NPE,  I don't know how to initialize `@Tempdir` before `@RegisterExtension`,  do you have any suggestion?",1,1,1,0,1,0,0,1,1,0,1,0,0
+flink,12069,This comment conflicts with current implementation.,You mean the address stored in the coordinator's checkpoint?,1,1,1,0,0,0,0,0,0,1,1,0,0
+flink,15371,"Could you explain the removal of `throw t;` ?
+Without it:
+1. error can be not logged at all - if no more upload scheduled
+2. or if upload errors are not logged later
+3. it can be logged with a delay (complicated debug)","This is a top level method from the uploader/executor thread pool and the only meaningful way of returning the error to the task thread is via `error`? If we throw here, it would have no effect, or am I missing something? ",1,1,0,0,0,0,0,0,1,0,1,0,0
+flink,4581,? Why does this test covers for both failure and normal paths? What if one of them never happen?,"What do you mean? What failure / normal path? `partition.add()` should always succeed in this case, i.e. it does not throw. If it did, the test would fail. It would also fail if the checks in the `finally` block fail.",1,1,0,0,1,0,0,1,1,0,0,1,0
+flink,10769,Can we set the scope only for `test`?,"Yes, It is ok to set scope  as `test`. But I don't know why set provide in old planner before.",1,1,1,0,1,1,0,1,0,1,1,0,0
+flink,14968,"I think it's better to signal explicitly that this thread can exit (after `notifyCheckpointCompleteAsync`?).
+Otherwise, if there is a pause between `cancel` call and (errouneous) `interrupt` that interrupt can go unnoticed.
+
+I reverted the fix and added 1s pause in `SourceStreamTask` - and the test passed (with running=true)","Yes, even without the sleep test can have false negative from time to time. Since this require unexpected sleep/hiccup of 100ms (or more), it looks like chances of this happening are pretty low (`<10%` ?), so the test would catch a regression quite quickly. This test checks:
+1. we have a source that ignores for `x` milliseconds cancellation
+2. checks that within those `x` ms source thread was not interrupted. 
+
+`notifyCheckpointCompleteAsync`? Did you mean `StreamTask#notifyCheckpointComplete` -> `CheckpointListener#notifyCheckpointComplete`? 
+
+Exiting on `CheckpointListener#notifyCheckpointComplete` would still require a sleep to check if the interruption was not called after it. Also in the stop with savepoint case, both `CheckpointListener#notifyCheckpointComplete` and `SourceFunction#cancel` are both being called from `StreamTask#notifyCheckpointComplete` one after another. As a matter of fact, `notifyCheckpointComplete()` is called before `cancel()`, so it would require even so slightly longer/more `MAX_POST_CANCEL_ITERATIONS`.
+
+I don't see how can we reliably test this without some sleep based probability window, because for that to be possible we would need to have a notification hook that is always triggered **after** interruption, so that the source would know if the interruption was supposed to happen it would have already happened. But we don't have anything like that.",1,1,1,1,1,1,1,1,1,1,1,0,1
+flink,7549,"Do we need to expose this class to all touched classes? If it would implement `ResultPartitionWriter` interface, we could just wrap it once in `Task` where it is currently created. `ResultPartitionWriter` could be used everywhere because other classes are mostly interested in `ResultPartitionWriter` but not in notification specifics.","Actually only `RecordWriter` and `Task` need touch this wrapper class for the requirement of notification in `addBufferConsumer` and `finish`. 
+
+- Task calls the `finish` logic, so it has to maintain `ResultPartitionWriterWrapper` for this notification.
+
+- `ResultPartitionWriterWrapper` has to be passed into `Environment` in order to be got for creating `RecordWriter`.
+
+`Task` temporarily also maintains the previous array of `ResultPartition` which would be changed after refactoring the current `ResultPartitionWriter` interface. Do I get your points or misunderstanding?
+",1,1,1,0,1,0,0,1,1,1,1,0,1
+flink,12699,"I think you cannot use Kafka connectors compiled against an older Flink version. This is mentioned in the release notes of https://issues.apache.org/jira/browse/FLINK-17376, which is not yet added here.",@zentol can you clarify this? This comes directly from https://issues.apache.org/jira/browse/FLINK-15115,1,1,0,0,1,0,0,1,0,1,0,0,0
+flink,12682,LICENSE.jodd is enough?,Do you mean we should always use the latest license? I was deliberately adding license files that are close to the specific version of each dependency...,1,1,1,0,0,0,0,1,0,0,0,0,1
+flink,6776,"As mentioned before, we should split this class into a `CoProcessFunction` and a specialized `CoProcessOperator` that only contains minimal extension. Currently, this class uses a lot of internal code.","Again I don't understand what is the problem? `CoProcessOperator` doesn't contain any logic besides wrapping/proxying to user function. Also what do you mean by:
+
+Regular `CoProcessFunction` and `CoProcessOperator` have fixed (different) semantic of what even time is set on emitted results when processing timers (check usage of `collector.setAbsoluteTimestamp` in this class compared to `KeyedCoProcessOperator`).",1,1,0,0,1,0,1,0,0,0,1,0,0
+flink,17520,You should be able to just use `producedDataType` here.,"I don't quite get it. `producedDataType` is the data type produced by this source operator after projection push down. It might be different from what is stored in the avro file. For example, if this source is partitioned then partition keys are stored in file path, not in avro file. Also the order of fields in `producedDataType` might be different from `physicalRowType`, and I need to map the fields in `AvroGenericRecordBulkFormat`.",1,1,1,1,1,0,0,1,0,0,1,0,1
+flink,2735,"There is no check for input, what would be in case incomingDataset will be empty, at least trainig is not required. May be it would be better to throw exception notifing about that or may be write a waring.
+	Such a trivial encoding could be recource consuming, but not efficient. ","@kateri1 - C119, but we can throw some warning message in the case that the word2vec vocabulary size is < 1 after initialization. I agree that this should only warrant a notification.
+
+ I'm not sure what you mean with `Such a trivial encoding could be recource consuming, but not efficient`",1,1,1,0,1,0,1,1,1,0,1,0,1
+flink,9905,Maybe instead of inheriting from `AbstractAvailabilityProvider` it would be better to use composition and introduce `private final AbstractAvailabilityProvider availabilityProvider` field?,"I ever considered making `AbstractAvailabilityProvider` as a specific helper class, not the current abstract class, and then we use it as a protected field in `InputGate` instead of inheriting it. But it needs also changes in `SingleInputGate` and `UnionInputGate` for reference with `AbstractAvailabilityProvider` in many places. And the current way does not need to touch them.
+
+I guess your main concern is from somewhat duplicated inheriting from `AvailabilityProvider` in the form? Because both `AbstractAvailabilityProvider` and `PullingAsyncDataInput` inherit from it. ",1,1,0,0,1,0,1,1,0,0,1,1,1
+flink,8162,Is it correct? What if the types mismatch? I think just comparing input size is not enough. Also `relBuilder.project(projects);` handles trivial projections internally.,"Sorry about the wrong comments bellow. I will update it.
+In this case, comparing the input size is ok. The input is also a project and the trivial project hasn't performed any column pruning. Or have I missed something?",1,1,1,0,1,0,0,1,0,0,0,1,0
+flink,13789,Just `parallelism <= 0`?,"Sure, btw should `TableException` also be thrown here instead of `RuntimeException`?
+@JingsongLi ",1,1,1,0,0,0,0,1,1,0,1,1,0
+flink,21245,"We should avoid hidden config options. Give them a proper key, move them into the `...Options` class they belong and use annotations to hide them from the docs generation. Otherwise it is very difficult to find them across the code base, we recently did in the same in the planner that also had internal options.",Where would you propose to place them and how to name them?,1,1,1,0,1,0,0,1,0,1,0,0,0
+flink,17811,"`new Tuple2<>` is expensive, can't we perform the trimming in place already? We could use a reusable `RowData` instance for buffering and copy over the values in `UpdatableRowData` later.","We can do it here and not use a `List<Tuple2<>>`, but how can we reuse the `RowData`? that's the `RowData` iface so we don't know the implementation and call directly `.setField()` on it. Could you please provide more details, probably I'm missing something.",1,1,1,0,1,0,0,1,1,0,0,0,1
+flink,21458,should we add a test to test the locking mechanism is invoked?,"Hi @hlteoh37 , 
+
+Thank you for reviewing the patch . 
+
+can you please elaborate more what exact test senerio you are thinking to get added here? 
+",1,1,0,0,0,1,0,1,1,1,1,0,1
+flink,11100,what's with the profile stuff?,"Sorry, I did not understand what you mean. Do you mean to set it as the default profile?",1,1,1,0,1,0,0,1,0,1,1,0,0
+flink,14165,"This test case is a unit test, not an integration test, so this test case should be moved to `TableEnvironmentTest`
+
+nit: `sink1Path` and `sink2Path` are unnecessary",You means that move this tests to `TableEnvironmentTest ` from `TableEnvironmentITCase`?,1,1,1,0,1,0,0,1,0,0,1,1,1
+flink,4851,"I did a similar refactoring in one of my pending PRs, but it's ok because that one will probably not make it into 1.4. What I would still suggest, if you search for subclasses of `StreamMockEnvironment`, there are still more cases (some as anonymous classes) that could be replaced by a proper dummy like this.","I have found only one more usage of `StreamMockEnvironment` in `AsyncWaitOperatorTest#testStateSnapshotAndRestore`.  Did you mean something more?
+
+",1,0,1,1,0,1,0,1,1,0,1,0,1
+flink,10009,`checkState()`?,What do you mean? You want to combine both `check` methods to one checkState?,1,1,1,0,1,1,0,1,0,1,1,0,1
+flink,11473,"I know that I made `Configuration` `Cloneable`, but now I have to admit that this was a failure. I would suggest to rather use the copy constructor of `Configuration` in order to not spread this pattern.","I'm curious, why is that a bad pattern? Because of a potential ambiguity with inheritance?",1,1,1,0,1,0,0,0,0,0,1,0,0
+flink,22987,"I looked into the multi-threading of netty a bit more and found the `SelectStrategy` being a viable tool to control the state of the request. I came up with the following test:
+```
+    @Test
+    public void testCloseClientWhileProcessingRequest() throws Exception {
+        final OneShotLatch connectTriggered = new OneShotLatch();
+        final OneShotLatch closeTriggered = new OneShotLatch();
+        final SelectStrategy fallbackSelectStrategy =
+                DefaultSelectStrategyFactory.INSTANCE.newSelectStrategy();
+        final SelectStrategy selectStrategy =
+                (selectSupplier, hasTasks) -> {
+                    connectTriggered.trigger();
+                    closeTriggered.awaitQuietly();
+
+                    return fallbackSelectStrategy.calculateStrategy(selectSupplier, hasTasks);
+                };
+        // Note that the executor passed to the RestClient constructor is not the same as the
+        // executor used by Netty
+        try (final RestClient restClient =
+                new RestClient(
+                        new Configuration(), Executors.directExecutor(), () -> selectStrategy)) {
+            final CompletableFuture<?> requestFuture =
+                    restClient.sendRequest(
+                            unroutableIp,
+                            80,
+                            new TestMessageHeaders(),
+                            EmptyMessageParameters.getInstance(),
+                            EmptyRequestBody.getInstance());
+
+            connectTriggered.await();
+
+            final CompletableFuture<Void> closeFuture = restClient.closeAsync();
+
+            closeTriggered.trigger();
+
+            // close should complete successfully
+            closeFuture.get();
+
+            final Throwable cause =
+                    assertThrows(
+                                    ExecutionException.class,
+                                    () -> requestFuture.get(0, TimeUnit.SECONDS))
+                            .getCause();
+            assertThat(cause, instanceOf(IllegalStateException.class));
+        }
+    }
+```
+It would require an extension of the `RestClient` adding a package-private constructor:
+```
+    // ...
+    public RestClient(Configuration configuration, Executor executor)
+            throws ConfigurationException {
+        this(configuration, executor, DefaultSelectStrategyFactory.INSTANCE);
+    }
+
+    @VisibleForTesting
+    RestClient(
+            Configuration configuration,
+            Executor executor,
+            SelectStrategyFactory selectStrategyFactory)
+    //...
+    NioEventLoopGroup group =
+                new NioEventLoopGroup(
+                        1,
+                        new ExecutorThreadFactory(""flink-rest-client-netty""),
+                        SelectorProvider.provider(),
+                        selectStrategyFactory);
+    // ...
+```
+WDYT? That should test the `isRunning.get()` code path.","With this additional test, the `isRunning` codepath is now tested, but not the branch where the listener is unable to be attached and is thus handled in `notifyResponseFuturesOfShutdown()`. I think there is just a microscopic window for this to happen, between the calls to `bootstrap.connect()` and `connectFuture.addListener()`, which are not executed atomically.
+
+The only way that comes to mind to test that would be to inject a latch to enable calling `close()` between those two calls.
+
+Do you think that's necessary? I could also add a note that that eventuality was tested manually, with `notifyResponseFuturesOfShutdown()` successfully resolving the future.",1,1,0,0,1,1,1,1,0,0,1,0,0
+flink,10330,"`taskSlot.isFree()` should be always `false` now if `taskSlot != null`.
+We could also consider removing `TaskSlotState#ACTIVE` and `FREE`","True, we could consider removing `TaskSlotState#FREE`, but why `ACTIVE`?",1,1,1,0,0,0,0,0,1,0,1,0,0
+flink,12980,"Whenever you use an executor that is not provided via some factory method in `java.util.concurrent.Executors` I would recommend writing down some tests for it to ensure it behaves exactly the way you expect it to.
+This right here is probably fine since we know the upper limit of possible tasks to be queued (== 1 task per slot), but a test would also be good for documentation purposes.
+",What kind of test do you mean? That the closing verification is off-loaded? I want the executor to allocate a new thread if there is no idle one for each slot closing but I do not want to keep idle threads too long. Is it not how the `ThreadPoolExecutor` is specified?,1,1,1,0,1,1,0,1,1,0,1,0,0
+flink,15425,"After your change `stopMailboxProcessor()` has an implicit contract that it should be thread safe and because of that I'm not sure if extracting this code to separate method as it is is a good idea. There is `WARN` comment that you have missed. 
+
+(Previously that was a private implementation detail of this lambda method that it has to be thread safe. Now you are moving it to the `StreamTask` interface)","Not sure if I fully understand the concern. Can you help me understand more? Previously it is possible that the logic in `stopMailboxProcessor` is run in a different thread from the mailbox thread, e.g. the `SourceThread` in `SourceStreamTask`. So supposedly the `stopMailboxProcessor` logic should already be thread safe. And expose it to subclasses should also be safe. Is that the correct?
+
+Or do you mean by exposing the method to subclasses, the subclasses may stop the mailbox any any given time without coordinating with the control flow in the `StreamTask`?  But both `mailboxProcessor` and `getCancelables` are already available to subclasses, so the subclasses can do that anyways.",1,1,1,0,1,1,1,1,1,1,1,0,1
+flink,15313,What has happened with this test? Have you replaced it with something else?,"Could you help explaining what does it test then? The way I'm seeing it verifies bookkeeping of sequence numbers.
+
+Tests such as e.g. `testActiveTimeoutAlignmentOnAnnouncement` verify that barriers are proritized on announcements when switching to unaligned checkpoints (data is overtaken)",1,1,1,0,0,0,0,0,1,0,1,0,0
+flink,12306,"This does not remove the output from `watermarkOutputs`. Please add a test that verifies correct behaviour when removing outputs.
+
+With the current design, it's actually not possible to remove the output from `watermarkOutputs`. One possible solution is to get rid of that list and always use the Map for iterating the outputs in `onPeriodicEmit()`. That would be a smidge slower but I think that's ok because periodic watermark emission does not happen super often.","Why is it not possible to remove from `watermarkOutputs`? It is a linear operation (`List.remove()`), but then again, it doesn't happen very often.",1,1,1,0,0,0,0,1,0,0,1,0,0
+flink,14847,"Just a question, we could theoretically iterate over regions instead of all vertices, here, right?","Yeah, it took me also some digging to find a connection. I found  `executionGraph.getSchedulingTopology().getAllPipelinedRegions()`. Not sure, though, whether this works conceptually.",1,1,1,0,0,0,0,1,1,0,1,1,0
+flink,12620,"I think it would be slightly nicer to do it the following way:
+```suggestion
+                        if (slotManager.registerTaskManager(workerTypeWorkerRegistration, slotReport)) {
+			    onTaskManagerRegistration(workerTypeWorkerRegistration);
+			}
+```
+
+That way, sub classes won't be able to obstruct the registration of TMs at the `SlotManager` but can still listen to registration events. Of course, this change would required that `SlotManager.registerTaskManager` returns `true` if it is a new registration and `false` if it is not a new registration.","I think this is a good suggestion on how to providing sub-classes obstruct the registration. Thanks for that. 
+
+What I don't understand is why do we need the `SlotManager.registerTaskManager` returns whether it is a new registration or a duplicated one.
+
+I think the following changes should work, with a no-op implementation for `onTaskManagerRegistration` in the base class, overridden in sub classes. 
+```suggestion
+			slotManager.registerTaskManager(workerTypeWorkerRegistration, slotReport);
+			onTaskManagerRegistration(workerTypeWorkerRegistration);
+```",1,1,0,0,1,0,1,1,0,0,1,0,0
+flink,3686,missing space after if,How should I ensure the param validity? Is there any helper class or should just throw an IllegalArgumentException? Is there any example I can take as reference param handling?,1,1,1,0,0,0,0,1,0,0,0,0,0
+flink,16287,"this tests only the schema, isn't it possible to access the underlying catalog table? via `getTableOperation`","Do you mean `getQueryOperation`? That'll be a `CatalogQueryOperation` which only has the identifier and resolved schema. I don't think there's a way to the underlying table (other than looking it up ourselves), but even so we have no table to compare it against; we'd need to assert individual parts anyway, no?",1,1,1,0,1,0,1,1,0,1,1,0,1
+flink,14014,It would be good to explicitly link to `config.sh#KEY_ENV_PID_DIR `and `config.sh#DEFAULT_ENV_PID_DIR`.,I cannot link the config.sh file  in the java document with {@link}. Can you help me ?,1,1,1,0,1,0,1,1,1,0,0,0,1
+flink,23376,Could be private ?,"I think the private constructor is generally used to prevent others from explicitly creating object.
+And RocksDBPriorityQueueConfig is not the case. I think the public constructor is more reasonable.
+Please let me know if my understanding is not right.",1,1,0,0,1,0,0,1,1,0,1,1,0
+flink,6883,this test must also not be run in parallel to `testSlotSharingForForwardJobWithCoLocationConstraint`,does it make sense that we move unlock to finally block for possible parallel testing? or defer the synchronization until we really make it parallelized.,1,1,1,1,1,0,0,1,0,0,1,0,0
+flink,6464,This is copied code but I don't understand why it's needed.,This is copied code but I don't understand why it's needed.,1,1,1,0,0,0,0,0,1,0,1,0,0
+flink,6594,some requisite field we can inject with constructor?,"I don't entirely understand what you mean, there is a builder to add the required fields. Do you mean adding a constructor to construct the object without having to use a builder?",1,1,1,0,0,0,0,1,0,0,1,1,0
+flink,6049,"given the existing pattern of separating by `JobStatus` we may want to do the same for the remaining jobs.
+
+```
+runningJobs.stream().collect(Collectors.groupingBy(JobStatusMessage::getJobState))
+	.entrySet().stream().sorted(<sort by JobStatus>)
+	.map(Map.Entry::getValue).flatMap(List::stream).sorted(<sort by timestamp>).forEachOrdered(<print>);
+```","Thanks for the reply @zentol , I wasn't sure I fully understand this comment. Are you suggesting that we should always group jobs with same status together during print for all 3 cases?",1,1,1,0,0,0,0,1,1,1,1,1,0
+flink,14165,please also add some test cases for legacy planner,"Hi @godfreyhe , Sry, How i get legacy planner and add tests for it? Add it to `org.apache.flink.table.api.TableEnvironmentTest`?",1,1,1,0,1,0,0,1,0,0,1,0,0
+flink,17387,"Split `addTaskForJob` into 2 separate methods instead, and explicitly create the TMJMG at the start of `submitTask.`","Could you elaborate why this should be changed?
+
+To me, it doesn't seem directly related to my change; I also don't see any obvious reasons why one way is better than the other.",1,1,1,0,1,0,0,1,1,0,1,0,0
+flink,11567,it's better to avoid the use of mock,"You mean I should replace ""mock"" with a ""TestBufferAvailabilityListener"" here? I can do this but I wonder what the difference is.",1,1,1,0,1,0,0,1,0,0,1,0,0
+flink,10146,we could already introduce a helper function to create `taskExecutorResourceSpec`.,Not sure what does this comment mean. What behavior exactly do we want to verify with `MesosTaskManagerParametersTest`?,1,1,1,0,1,0,0,1,0,0,1,1,0
+flink,18930,"This line is inconsistent with others, is it correct? There is a mixture of `trust-all-certificates` and `trustAllCertificates` in the options","I am sorry, I can't get why it is inconsistent. I couldn't find the `trust-all-certificates` or the `trustAllCertificates` in this document or in the firehose/aws options in the implementation.",1,1,0,0,1,0,0,1,1,1,1,0,1
+flink,5115,"The problem with this test and many others that were added is that they test implementation details instead of behavior. We shouldn't check whether the parent is a GenericMetricGroup or a GenericKeyMetricGroup, but instead how the scope/variables are affected.
+","Do you mean it is preferable to replace this with verifying `group.getLogicalScope(ilter, delimiter)` and `group.getAllVariables()`?",1,0,1,0,1,0,1,0,1,0,1,0,1
+flink,12268,"hmm, this reminds me, we aren't caching downloads for the e2e tests on azure, are we?","Nope, we are not. What needs to be done for that?",1,1,1,0,1,0,0,0,0,0,0,1,0
+flink,18931,"For the order of parameters, I think place `attemptsPerTaskHistogram` in the last order looks better.","Hm.. `attemptsPerTaskHistogram` is already the last argument. Could you clarify what do you mean?
+",1,1,0,0,1,0,0,0,1,0,1,1,0
+flink,11972,"Sorry for the back and forth but please add a more ""descriptive"" documentation. For example, this is what `CountTrigger` has:
+```
+Creates a trigger that fires once the number of elements in a pane reaches the given count.
+	
+@param maxCount The count of elements at which to fire.
+@param <W> The type of {@link Window Windows} on which this trigger can operate.
+```
+I would rather have a good description and have no `@param` descriptions ","Its okay, better now then never.
+So i added more description and added and example, is that enough?",1,1,1,0,1,0,1,1,1,1,1,1,0
+flink,9006,"> [FLINK-13107][table-planner-blink] Fix bug when infer resultType of some PlannerExpression.
+
+[FLINK-13107][table-planner-blink] Derive sum, avg, div return type in planner expressions using behavior of blink ?","Run a sql query using blink, the behavior already using behavior of blink. It would be strange if the  behavior is different when run a tableApi query.
+So I think we should use behavior of blink.
+Do you mean change the commit message?",1,1,1,0,0,0,1,0,1,0,0,0,1
+flink,15221,"I don't sure how it is legal to reset the flag to true. In fact, I didn't find why MailboxProcessor can not be restarted but I could miss something.","I don't sure how it is legal to reset the flag to true. In fact, I didn't find why MailboxProcessor can not be restarted but I could miss something.",1,1,1,0,0,0,0,1,0,1,1,0,0
+flink,16946,I think we should put these options into the `JobManagerOptions` class.,You think `ClusterOptions.CLUSTER_IO_EXECUTOR_POOL_SIZE` should control both the `ClusterEntrypoint` and the `JobMaster`? Seems like we would want arbitrary control over either.,1,1,1,0,0,0,0,1,1,0,1,1,0
+flink,19190,"let's offer a `ofSpecific(String name, Object toString)` that will be printed as `""<...>""`, we don't need the following `of` methods then",Not sure what you mean with this and the above comment,1,1,1,0,1,0,0,1,0,0,1,0,0
+flink,4517,"nit: I would change the exception to `UnsupportedOperationException`, which is more natural fit hear. Backward compatibility is not something that we should worry about with `IllegalStateException` :)","I agree that `IllegalStateException` is not the best fit here, but also, `UnsupportedOperationException` is not - what do you think about `ProtocolException`?",1,1,0,0,0,0,0,1,0,0,1,1,0
+flink,11322,@jiasheng55 The `YarnFileStageTestS3ITCase .testRecursiveUploadForYarnS3a ()` seems to be failing on my Travis and the failure seems to be related to this change here. Could you please fix it and then I can merge.,"@kl0u Sorry I didn't reproduce the failure on my Travis and I don't know how to run `YarnFileStageTestS3ITCase` manually, could you tell me how to reproduce this failure?",1,1,1,0,1,0,0,1,0,0,1,0,0
+flink,6091,"Are those changes in `AsyncDataStream.scala` somewhere covered by the tests? If you comment out their method bodies, does at least one test fails?","I haven't found any tests for `AsyncDataStream.scala` or `AsyncFunction.scala`, I am not sure whether it is missing or unnecessary. What do you think?",1,1,1,0,1,0,0,1,0,0,1,0,0
+flink,7549,"it seems we also need to check success of `partitionWriter.finish()` to preserve the old behaviour.
+Maybe, `ResultPartitionWriter.finish()` could also return boolean.","I think the current implementation also keeps the previous behavior. `partitionWriter.finish()` would always be successful except throwing exception. If exception, the following notification would not be executed as well.
+
+Do you think we still need the explicit form for returning boolean value?",1,1,1,1,1,1,1,0,0,0,0,1,0
+flink,8476,Can we change it to implement `AutoCloseable` ?,"I've also noticed that (I was struggling with finding a good name for `AsyncDataInput `), but what would you suggest? ",1,1,0,0,1,0,0,1,0,0,1,0,0
+flink,13834,"All of these only test the deserialization. We should also add tests for serialization. I think we can use `testNullableField` for this purpose. 
+
+Besides, we can rename method `testField(fieldType, csvValue, value, deserializationConfig, fieldDelimiter)` to `testFieldSerialization` to be more specific. ","rename method  `testField(fieldType, csvValue, value, deserializationConfig, fieldDelimiter)` to `testFieldSerialization` ?  or `testFieldDeserialization` ?",1,1,1,0,1,0,0,1,0,1,1,0,1
+flink-kubernetes-operator,711,"Could we treat `scalingTracking` as a metric, just like the other scaling metrics? Apart from being consistent with the current code, this also has some advantages because the scaling time will be reported as a metric out of the box.
+
+So basically I'm asking to insert the current rescale time into the `collectedMetrics` map.","How do you propose to make the association between the rescaling decision and the collected metrics record? My understanding is that `updateMetrics` writes collected metrics irrespective from the rescalings, so we need to somehow decide which history entry to associate the restart time with. To be honest this feels like misusing the data structure not for its original purpose and adding complexity that will be hard to interpret when someone reads the code. It is already hard enough to interpret what is going on in the `updateMetrics` method.",1,1,1,0,0,0,0,1,0,0,1,0,1
+flink-kubernetes-operator,425,"The reference page is generated based on JavaDocs, you need to fix it there, you cannot edit this page directly",@gyfora It is a space caused by a line break in the doc. Is there any solution for this? Thank you!,1,1,1,0,1,0,0,1,0,0,1,0,0
+flink-kubernetes-operator,438,"I think we don’t need this branch here, this would prevent us from suspending failing jobs","@gyfora. At this place: https://github.com/apache/flink-kubernetes-operator/actions/runs/3574448062/jobs/6009735670. 
+
+Could you please help me here? Not sure if re-triggering solves it. 
+
+```
+flinkdeployment.flink.apache.org ""session-cluster-1"" deleted
+flinksessionjob.flink.apache.org ""flink-example-statemachine"" deleted
+persistentvolumeclaim ""session-cluster-1-pvc"" deleted
+ingressclass.networking.k8s.io ""nginx"" deleted
+No resources found
+Error: Process completed with exit code 1.
+```",1,1,1,1,0,0,0,1,1,1,1,1,0
+flink-kubernetes-operator,711,This doesn't factor in any excluded vertices through the excluded vertices setting.,"Not sure I am missing something, but I thought only vertices which are scaled are entered into the scaling history. Since this is what we build our `targetParallelisms` based on (see `getTargetParallelismOfScaledVertices`) and iterate over  `targetParallelisms`, not the `actualParallelism`, I assumed this already being dealt with.",1,1,1,0,1,0,0,1,0,0,0,0,0
+flink-kubernetes-operator,711,"Just wondering, if we store the max restart time, isn't it enough to store a single value? This would simplify the code.","Do you mean just store maxRestartTime per job instead of the startTime endTime pairs? 
+1. How are we going to prevent an abnormally large timestamp that happened a month from ""locking"" the restart time forever?
+2. How about the idea of adding the exponential moving average we were discussing as a potential improvement?",1,1,1,0,1,0,0,0,1,0,1,1,0
+geode,4395,"The scoring is now not consistent for single node compared to distributed nodes... there is a way to configure the old scoring mechanism to keep them consistent... if we want to move to the new scoring system, we'll have to figure out a way to feed the correct metadata to the score algorithm...","Thanks @jhuynh1,
+what is a way forward? Is the latest changes OK or we need to change something else?
+Any thoughts/suggestions?
+",1,1,1,0,1,0,0,1,0,0,0,0,0
+geode,6770,"I think you should move this to a static inner-class or better yet use Mockito to mock it:
+```
+JMXConnectorServer jmxConnectorServerWithMBeanServer = mock(JMXConnectorServer.class);
+```","I need two instances of subclass of `JMXConnectorServer`, which an abstract class. One instance with a non-null `mbeanServer` field, the other with a null `mbeanServer`. I don't know why move this to a static inner-class. I have tried to mock `JMXConnectorServer`. But I don't think a mock will work in this test case. I need to set the `mbeanServer` field of `JMXConnectorServer`. There is no setter for it. Only the constructor sets it.",1,1,0,0,1,0,0,0,1,0,1,0,0
+geode,6629,it's probably cleaner to use 'assertThatThrownBy` method,"Is this the type of thing you're recommending:
+```
+    assertThatThrownBy(
+        () -> JsonWriter.writeArrayAsJson(mock(JsonGenerator.class), value, ""myDate""))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage(""Expected an array for pdx field myDate, but got an object of type ""
+              + value.getClass());
+```",1,1,1,1,1,0,0,1,0,0,1,1,0
+geode,6146,Missing test case for this branch.,I'm not quite sure about your concern. There are 10 sample inputs in `RedisKeyJUnitTest.testRoutingId_withHashtags`. Could you express a relevant test case in the form of an actual input example?,1,1,1,0,1,0,0,1,1,0,1,0,0
+geode,918,"You introduced this RegionService under internal package. But there's RegionService at org.apache.geode.cache package. This class is better to be a different name, or merge its functionality into other RegionService. ","Thanks. Yes, its confusing. That API doesn't belong in the public RegionService interface. Its a specialized API for CacheServices that are on Regions. I can rename it. Any ideas? How about RegionCacheService?",1,1,1,0,0,0,0,1,1,0,1,0,0
+geode,5403,"Why this is not `handleManagerDeparture(theId, false, reason, true)`? `handleManagerDeparture(theId, false, reason)` will not update the `stats` in line 1887.","Sorry, I don't understand the question.  We want to decrement the node count once, but this method will be invoked multiple times for the same departing node.  If we restrict the decrement to view-changes it will only be decremented once because we only notify memberDeparted once for a member that's left the view.",1,1,1,0,1,0,0,1,0,0,1,0,0
+geode,845,"This is causing the `String`-based to go through the `Enum`-based methods.  I think we want to do that the other way around since the `String` methods are more general.  (For example, if someone wants to check for some custom security target like ""CLUSTER:READ:LDAP"" this will currently throw an exception.)",or do we want to jump ahead and allow other resource/operation with this change and deprecate the ENUM form (along with getResource() and getOperation() call)?,1,1,1,0,1,1,1,1,0,0,1,0,1
+geode,6629,"The caller already made sure value.getClass().isArray() was true. So this message should say something about the array element type not being supported by JSON. Given a Class instance that isArray() you can call getComponentType() it to get the class that describes the element type. The message could say that the componentType is not supported for JSON. Also keep in mind that ""value"" is an array and toString on an array is not very helpful (just prints out the class name and its hashCode but not the elements of the array).
+Also you need a unit test for this one","Does this work?
+```
+          ""The pdx field "" + pf + "" is an array whose component type ""
+              + value.getClass().getComponentType()
+              + "" can not be converted to JSON."");
+```
+I'm not sure I like trusting that the caller made sure that value.getClass().isArray() was true though.",1,0,1,0,1,0,1,0,0,0,0,0,1
+geode,7440,Is it really okay to just do nothing here if buckets is null? It does not get nulled out at the end of its life. It is null after the constructor and made non-null when initializeRegionAdvisor is called. But it is called BEFORE we call processProfilesQueuedDuringInitialization which is the only place we null out preInitQueue. We only get to this null check if preInitQueue is null. My concern is if we do get to this line and buckets is null then something is wrong with our internal logic and we are not going to  call removeIdWithSerial which seems wrong.,"If we do get to this line, then `preInitQueue` has to be `null`, which means `processProfilesQueuedDuringInitialization()` is called. And `initializeRegionAdvisor()` is called before `processProfilesQueuedDuringInitialization()` to initialize the `buckets` array. So I don't think `buckets` is `null`. Maybe I am missing something?",1,1,1,1,1,1,0,0,1,0,1,0,0
+geode,4395,"The scoring is now not consistent for single node compared to distributed nodes... there is a way to configure the old scoring mechanism to keep them consistent... if we want to move to the new scoring system, we'll have to figure out a way to feed the correct metadata to the score algorithm...",Do we need to change `reduce` method to compare on key instead of score? Or it is enough to see that all entries exist in both singleResult and distResult?,1,1,1,1,0,0,0,1,1,0,0,0,1
+gobblin,3498,"Since we disable the following writer as well, not sure whether you want to add the following writer to the exception as well, depends on you",Not sure what you mean? It's adding the name of the writer class that failed so that we know if failure happened in iceberg writer or in hive writer.,1,1,1,1,0,1,0,0,1,1,1,0,0
+gobblin,1689,"Should the `simulate` check be put around both line 98 and line 100? Then when running in simulate mode, it is more obvious which version will be cleaned.",Didn't get it. Can you explain.,1,1,1,1,1,0,1,0,1,0,1,0,0
+gobblin,2912,Why reduce the default? Can we leave it as Integer.MAX_VALUE?,"If we really request that much, does Yarn have any protection against us ? ",1,1,1,0,1,0,0,1,0,0,1,0,0
+gobblin,3172,Shall we keep consistent with other files for import convention ?,"DataFile here refers to 'org.apache.iceberg.DataFile', and the parameter is 'org.apache.gobblin.metadata.DataFile', how should I keep consistent with other files? Not sure how other files are dealing with this type of import",1,1,0,0,1,0,0,0,1,0,0,0,0
+gobblin,1616,I think this needs to be `volatile` for thread safety.,"will add, although I thought the synchronized block around getKeyRecords() means we don't need to make it volatile? ",1,1,0,0,1,0,0,0,0,0,1,0,0
+guacamole-client,497,"The filter should also be factored in right here - that is, if the user has configured the configuration DN, the configured search filter should, at the very least, be `AndNode`d together here with this `NotNode` to remove `guacConfigGroup` objects from the results.",You say... Retrieve everything under `configurationbaseDN ` **NOT** containing `guacConfigGroup `right?,1,1,1,0,1,0,1,1,0,1,0,0,0
+hadoop,5847,"if this test uses file:// as the childen fs then it could be added in hadoop common, which is where viewfs is implemented. Doing that means that yetus will run the test on every change to hadoop-common, which is needed to stop regressions in viewfs only being found later",Sorry I don't fully understand what you mean. Do you suggest moving this test file to hadoop-common?,1,1,1,0,1,0,1,1,0,0,1,0,0
+hadoop,1988,why do need this method while we can just call new FsGetter() directly?,"Thanks @chliang71  for the review. We have overridden this method in ViewFSOverloadScheme class. In ViewFSOverloadScheme, fsGetter gets its special FsGetter anonymous subclass instance with its own implemented methods. Does this answers your question? ",1,1,0,0,1,0,0,1,1,0,0,0,0
+hadoop,6198,add the caught exception as the cause,"im not totally sure what the ask is here, this is how i've been doing all of them. Are you saying only have the caught exception as the cause without the `getEnclosingRoot - ""` part?",1,1,0,0,1,0,0,1,0,0,1,0,0
+hadoop,3358,"Can you please add a testcase where the gpu resource is added to the resource_types, but it isn't configured in absolute_resources? Just for future development, to ensure that this will be supported in the future.","A good question, we should get back to it. What happens, when a resource is not defined in configuration, but is present as a resource type? Should it be zero by default?",1,1,0,0,1,0,0,1,0,0,1,0,0
+hadoop,5421,"is this going to break when the hadoop-aws module is running against an unshaded version of the SDK? as the reason this class does some reflection games already is downgrade in this situation ...you can't switch to wildfly and openssl, but you can at least work","I don't have a lot of knowledge here, but I don't think so. [software.amazon.awssdk.http.apache.ApacheHttpClient](https://github.com/aws/aws-sdk-java-v2/blob/master/http-clients/apache-client/src/main/java/software/amazon/awssdk/http/apache/ApacheHttpClient.java) is part of the SDK and not the shaded http dependency. ",1,1,0,0,0,0,1,1,0,1,0,0,0
+hadoop,2731,"again, can we use assertThatStatisticMean()?","I am not able to add ```.isGreatherThan(<SOME_DOUBLE>)``` after assertThatStatisticMean(), I guess because this is an ```ObjectAssert<MeanStatistic>``` rather than ```DoubleAssert```?",1,1,1,0,1,0,0,1,1,0,1,0,0
+hadoop,2073,we are getting so close here. Now move this up to L28.,"You mean move to L27 so that org.slf4j and org.apche are single block?
+",1,1,0,0,1,0,0,1,1,1,1,1,0
+hbase,2237,"@Apache9, we're failing the `InitMetaProcedure` with an `IOException`, and HMaster will fail the master startup if `InitMetaProcedure` is `FAILED` with an exception. 
+
+Still, alternatively, we could continue the bootstrap without throwing (but this is not good as you recommended)
+
+so, do you think this change align with your comments? ","@Apache9, `InitMetaProcedure` with an `IOException`, and HMaster will fail the master startup if `InitMetaProcedure` is `FAILED` with an exception. 
+
+Still, alternatively, we could continue the bootstrap without throwing (but this is not good as you recommended)
+
+so, do you think this change align with your comments? ",1,1,1,1,0,1,0,1,1,0,1,0,0
+hbase,3279,"Why do we need to download the whole file?
+
+Just create an InputStream and an OutputStream and then use IOUtils.copy?",@Apache9 Not sure if I understood what you meant. Can you explain a bit more detail?,1,1,1,0,1,0,0,1,0,0,1,0,0
+hbase,2800,"Why introduce an StoreContext? Isn't that what a Store is? Store spans files.
+
+(We need the 'H' in HStoreContext?)","IMO those informative accessor/reference and final/read-only primitives should ideally be in the context, although we're focusing on writer (`StoreFileWriter`) related reference and may have missed few of them (e.g. `scanInfo`) in this commit. 
+
+let's try to clarify your suggestion 
+1. if you see the `StoreContext` is general to be applied on most cases, are those missing fields (e.g. `scanInfo` and  final primitives) what you're trying to point out ? if so, we can revisit and filter/add more into the `StoreContext` 
+2. The scope of this `Context` is more related to Writer(`StoreFileWriter`)/Committer(will be added), should we rename it to `StoreWriterContext`/`StoreWriteContext`  that used by those operators?
+
+",1,1,1,0,0,0,0,1,1,1,1,0,0
+hbase,850,Is this necessary?,Fair enough. Not sure why that is in there to be honest. I probably came from the original `TestThriftSpnegoHttpServer` class. Which probably got copied from one of the other `HttpServer` tests.,1,1,1,0,0,0,0,1,1,1,1,0,0
+hbase,3372,"I think null handling could cause compatibility issue and hence might not make this eligible to land on branch-2 and branch-1 minor releases. @Apache9 @ndimiduk Wondering if it is good idea to deprecate this one and add new API that returns an enum with values: {TRUE, FALSE, NOT_PRESENT_IN_TD} to clearly migrate from here to new one?
+This is to maintain source compatibility and with new API, we can make decision of whether to use site config or TD property value and then it can go to minor releases on branch-2.",@virajjasani - Not sure how using enum will help in maintaining compatibility. Yes it will surely improve code redabolity but It will face the same problem. Am i missing something here?,1,1,1,0,1,0,1,0,0,1,1,1,1
+hbase,5051,I'm not entirely certain when `cleanup` gets called. Does it make sense to only build the reCompareExecutor if it is null? Or do we want to build a new executor on every call to `map`?,I'm not entirely certain when `cleanup` gets called. Does it make sense to only build the reCompareExecutor if it is null? Or do we want to build a new executor on every call to `map`?,1,1,1,0,0,1,0,1,1,1,1,0,0
+hbase,2800,Does DEEP_OVERHEAD and heapSize() need to change? Does TestHeapSize still pass?,"TestHeapSize still passed when I checked it locally.
+
+from what I understood from the `FIXED_OVERHEAD` were being calculated by `ClassSize.estimateBase`, it will automatically calculate the our newly added fields and reference included the change of `HStoreContext storeContext`. 
+
+So for the `DEEP_OVERHEAD` that takes new calculated `FIXED_OVERHEAD` to come up the heap size, it should be done already. Or did I miss something here? ",1,1,0,0,1,0,0,0,1,1,1,0,1
+hbase,3488,"Couldn't we require the regions to be positional (regionA, regionB) so we didn't have to do this check and flip-flop the argument order?
+
+Also, is n-way region merges handled at a higher level?","
+We could assume that since this is the direct store approach, the `HRegionFileSystem` instance delegating the job for this strategy is wrapping a `resulting merged region` and the correct order of params are then passed. 
+
+
+Ain't sure I follow you. You mean multiple regions merge? ",1,1,1,0,1,1,1,1,0,1,1,1,1
+hbase,923,Can we move this method to another class?,Where? This seems like most obvious place to look if you were looking for this sort of utility?,1,1,1,0,0,0,0,1,1,0,1,0,0
+helix,1961,not an expert but AFAIK this can be used using stream/filter.,TFTR. I am not sure if we could throw exception in lamda function...,1,1,1,0,0,0,0,1,1,1,1,0,0
+helix,1961,not an expert but AFAIK this can be used using stream/filter.,TFTR. I am not sure if we could throw exception in lamda function...,1,1,1,0,0,0,0,1,1,0,1,0,0
+helix,955,This if statement shouldn't be deleted. The reasoning is clearly shown in the logging: the callback could be triggered before `ZKMetadataStoreDirectory` is fully initialized. Removing this if statement leaves the rest of the logic unguarded.,Can you help me understand in what case `the callback could be triggered before ZKMetadataStoreDirectory is fully initialized`?,1,1,0,0,1,0,0,1,1,0,1,0,0
+helix,2090,"Would it be better to test more entry functions, with different parameter requirements? ","@mgao0 I had just added some more tests before your comment, is your comment considering those tests as well?",1,1,1,0,0,0,0,0,1,0,1,0,0
+helix,2289,"Could you make it explicit in a comment that this function must be called in a synchronized setting? This is my worry in terms of ""clarity"". ","Thanks for the comment, but why this has to be synchronized? it's a read operation",1,1,0,0,0,0,0,0,0,0,1,0,1
+helix,2120,"When you said parallel test execution, do you mean test classes running in parallel or test cases (methods) running in parallel?
+For former, I remember we had a setting that prevents classes from running in parallel; for latter, we could set test dependency to force sequential execution. ","I think it could be both. I don't know what setting that is, can you point me to a relevant resource please?",1,1,1,0,0,0,0,1,0,1,1,0,1
+helix,1663,"This test should probably be named as TestZkClientAsyncFailureMetric since your new code is only adding metrics. The aync function should be already covered in existing tests. 
+With that said, have you checked whether it's possible to only add metrics testing to existing tests by mocking the results? That would save us one additional test file. If there is no available code path or too many efforts involved, I'm fine with having a separate test too. But please check the zkclient and monitor test. ","Thank you, @zhangmeng916 for your comments. They make sense and I will address them in the next commit. Just to be clear, are you suggesting adding these test methods to an existing test class, or incorporating these testing paths into an existing test method?",1,1,1,1,0,0,0,1,0,0,1,0,1
+helix,65,The instanceName argument is not necessary since it can be get from instanceConfig.getInstanceName(),"Could do that, but doesn't `setInstanceConfig(clusterName, instanceConfig)` feel a bit odd as an API?",1,0,1,0,0,0,0,1,0,0,1,1,0
+helix,1460,"A question regarding the description, if the error is just logged here, meaning the users won't really know there is a mismatch. If the callback is not done, they won't be able to distinguish between this error and other errors. Is this the expected behavior?","You mean they wouldn't be able to distinguish ""stale messages"" vs ""messages that don't have callbacks set up correctly""? I think these cases are logically the same and can't be easily distinguished code-level. If we are loosening up on one case, it's going to affect the other. 
+
+On the other hand, callback registration is done in our code and naturally there should be a callback before sending messages that require replies. I imagine the previous check was there for cautionary purpose, not that messages are commonly created with incorrect correlation ids. ",1,1,0,0,1,1,0,1,1,0,0,0,0
+hive,175,"To retain backward compatibility, new arguments should be qualified with optional.","Not sure what you mean here, this is the method to create the table with constraints, AFAIK you cannot make arguments optional? The schema of the tables used to store the constraints is still the same.",1,1,1,0,1,0,0,0,0,1,1,0,1
+hive,1605,"1. Can we use StringUtils.isNotBlank(db_name_input) instead of (db_name_input!=null). 
+2. Also can we have the same check on catName.
+3. Can we use unified camel casing naming  convention across variable name.","Thanx @ashish-kumar-sharma 
+1. I will address.
+2. Why for catName? It isn't getting accessed anywhere which can fetch any NPE.
+3. I didn't catch this? I haven't introduce any variable itself.",1,1,1,0,1,0,0,1,0,1,1,1,1
+hive,4360,please keep the original code formatting,"Do you mean something like this?
+```
+            if (!mapJoinOp.getConf().isBucketMapJoin() &&
+                !mapJoinOp.getConf().isDynamicPartitionHashJoin()) {
+```",1,0,1,0,1,0,0,1,1,0,1,1,0
+hive,526,"I'd be interested in seeing more complex tests, for example, mapping Avro `doc` fields to the Hive `comment` fields",I'm not familiar with `doc` fields and `comment` fields. Can u elaborate a little more or provide some documentation.,1,1,1,0,1,0,1,1,0,1,1,1,1
+hudi,4669,Not strictly necessary:  I see the scala code has defaults for these two args.  Another constructor with these defaults can be added.,Not sure i follow your suggestion here. Can you elaborate?,1,1,1,0,0,0,0,1,1,0,1,0,0
+hudi,327,Not sure if we need this test (in the interest of keeping this file from growing more).. This just tests index.tagLocation() which should be tested already..,This test specifically test tagLocation.  You mean to remove this test entirely?,1,1,1,0,0,0,0,1,1,0,1,0,0
+hudi,1440,"It's a user-faced feature, we'd better to describe it in the documentation. WDYT?",Sure @yanghua . Could you point me to where I can add this?,1,1,1,0,0,0,0,1,0,0,1,0,1
+hudi,9558,"do you want to create a local variable here? I think no, so you can use your cancel method",I don't really understand what you mean here? I created a new local thread pool for running all table services and destroyed it since we only need it once.,1,1,1,0,0,0,0,1,0,1,1,0,0
+hudi,3071,Had to explicitly add these as we were getting NoClassFound for some classes. Will add the version in properties section,@n3nash @vinothchandar I am not able to figure this out but the tests fails for sure if janino jar is not present,1,1,1,0,1,0,0,1,0,0,1,0,0
+hudi,7921,"should we be doing this in L1088 ? bcoz, this also gets into metadata records. ","Based on my understanding, `createInstantTime` is used in two places:
+- For `files` partition: `getFilesPartitionRecords(createInstantTime, partitionInfoList, allPartitionRecord)`, `createInstantTime` is used to determine the file list till the instant time in data table.  So this should not have the suffix.
+- For `bloom_filters` partition: `HoodieTableMetadataUtil.convertFilesToBloomFilterRecords(
+            engineContext, Collections.emptyMap(), partitionToFilesMap, getRecordsGenerationParams(), createInstantTime)`, `createInstantTime` is stored in the metadata table record.  Not sure how important this is.",1,1,1,0,0,0,0,1,1,1,1,1,1
+hudi,6725,Can you elaborate what `writtenPartitionsSince` refer to?,Do you mean adding the explanation of `writtenPartitionsSince` in the method comment?,1,1,1,0,1,0,0,1,0,0,1,0,0
+hudi,251,Use ReflectionUtils to cache the class instance and config is not the right place to instantiate the class. I would do it as a interface method (factory) in WriteStatus interface,"Sure Prasanna, following is what you mean right?
+
+In HoodieWriteConfig add below
+```
+    public WriteStatus getWriteStatus() {
+        return ReflectionUtils.loadClass(props.getProperty(HOODIE_WRITE_STATUS_CLASS_PROP));
+    }
+```",1,1,0,0,1,0,0,1,0,0,1,1,1
+hudi,4753,If we don't care about the generic let's mark it as wildcard instead of using it as raw type: `HoodieCommitMetadata<?>`,"Sorry, Alexey. I didn't get the point.
+Did you mean `HoodieWriteMetadata` which is `public class HoodieWriteMetadata<O> {xxx}`
+Or `HoodieCommitMetadata ` which is `public class HoodieCommitMetadata implements Serializable {xxx}` :<
+
+
+",1,1,1,0,1,0,0,1,0,1,1,1,1
+hudi,1091,can we try to use java8 collect() APIs to implement these.,"Are you suggesting something like this
+
+Stream<String> matchingFiles = Stream.concat(filesWithNoRanges.stream(), indexLookUpTree.getMatchingIndexFiles(recordKey).stream());
+    Set<Pair<String, String>> toReturn = new HashSet<>();
+    matchingFiles.forEach(file -> toReturn.add(Pair.of(fileToPartitionPathMap.get(file), file)));
+    return toReturn;",1,1,1,0,0,0,0,1,1,0,1,0,0
+hudi,1150,"Could be better to re-use the same schema? if you really want two different schema, then its time to modularize this class better?","@bvaradar I am still trying to understand why do you want to distinguish the topic from which the record with TestRawTripPayload got ingested? In the current setup also, all the test cases are passing. Could you please make your intention more clear?",1,1,1,0,1,0,0,0,1,0,1,0,1
+hudi,1150,any reason this is in the `hudi-common` package?,"Get your point, will move the class to utilities package. Can you please elaborate what do you mean by TargetTableConfig. All the properties in this class only apply for Source. I guess with few changes in validations part (validateTableConfigObject function in HoodieMultiTableDeltaStreamer.java), the same class can be used for non-kafka sources too? Let me know your thoughts on this. @bvaradar ",1,1,1,0,0,0,0,1,0,0,1,1,0
+hudi,1558,Can we append this parameter into the list of the parameters?,I did not get this. Which list are you referring to?,1,1,1,0,0,0,0,1,1,1,1,0,0
+hudi,1722,can we get away by delegating this to be super class?,Do you mean use `ParquetInputFormat` as superclass? We have to use `ParquetFileFormat` from Spark.,1,1,1,0,0,0,0,1,1,1,1,0,0
+hudi,5328,This can introduce data skew if most data are in the latest date partition.,"Not sure i follow your train of thought: that's the whole idea of such partitioners (parittion-sort and partitioner-no-sort) to be able to partition the data to be better aligned with physical partitioning, right? 
+
+In case data is heavily skewed into most recent partition, it shouldn't be handled with this partitioner.",1,1,1,0,1,0,0,1,0,0,1,0,0
+hudi,5445,"The builder is very similar to `TestConfigurations.Sql`, we can plan to refactor the code.","What do you mean? refactor  TestConfigurations code with HoodiePipeline?
+I think it's no need to refactor code with HoodiePipeline.
+Firstly, TestConfigurations is a test util class and some code and functions are only designed for test used.
+At some time, TestConfigurations and HoodiePipeline just had very small similar. 
+Secondly. TestConfigurations called for tests but HoodiePipeline called for low-level APIs used. it's maybe a little confused after refactor code
+
+",1,1,1,0,1,0,0,1,1,0,1,0,0
+hudi,6254,checkIfValidFileSlice -> filterValidFileSlice ?,"
+I'm not sure that if a boolean returned method return may throw an IllegalXXXXException, it may be more appropriate to be named with checkXXXX. Is it?
+",1,1,1,0,1,0,0,1,0,0,1,0,0
+hudi,1804,"when I was benchmarking Hfile, found few other cache config params to be useful. 
+prefetch on open, cache L1 and drop behind compaction. More details can be found [here](https://issues.apache.org/jira/browse/HUDI-432). Can we add these 3 configs to this class as well",Can you please provide the source to your benchmarking so I can add the configs? The source code link in HUDI-432 is broken.,1,1,1,0,0,0,0,1,1,1,1,1,0
+hudi,7021,This is actually incorrect -- this will delete the record,"The logic here is aligned with the previous one. What status will trigger ""This will delete the record""?",1,1,1,0,0,0,0,1,1,1,1,0,0
+hudi,9593,We should also call merger API here to check whether the record need to be dropped before load it as result of query.,"Hi @beyond1920, not quiet understand why we need to use merge here since the function tends to remove the record. Can you explain a bit?",1,1,0,0,0,0,1,1,0,1,1,1,0
+iceberg,4307,"Can we add a test that uses a partition spec, writes out data, then updates the partition spec, and write data again, in order to test that we're catching all partition specs propery?
+
+That way we guard against a regression.","I already tried to add this test, but couldn't figure out how to update the partition specs. Can you point me to an example on how to do it.",1,1,1,0,1,0,0,1,0,1,1,0,1
+ignite,8109,Is it possible to use a DTO object instead? Generics is more clear solution,"Not sure I've got an idea.
+Could you provide an example related to the current tests?",1,1,1,0,1,0,1,1,1,1,1,1,1
+ignite,4639,Should use build version and not the latest one. Don't know what to do for snapshot builds.,"@alamar Sorry, I don't quite understand your concern. https://ignite.apache.org/latest will not give you the snapshot or nightly builds, just the latest stable one, AFAIK.
+
+Can you please explain?",1,1,1,0,0,1,0,1,0,1,1,0,1
+ignite,6734,It looks like we have a possible memory leak here. `TcpClientTransaction` has a reference to `TcpClientTransactions` which has a reference to `ThreadLocal<TcpClientTransaction> tx`. If some `TcpClientTransactions` are not in use anymore but left a value in thread-local that value and `TcpClientTransactions` instance will never be garbage-collected. Making `TcpClientTransaction` class static should protect from it.,"We can't make `TcpClientTransaction` static, because we need `TcpClientTransactions` context here. 
+I don't quite understand how we can get possible leak here. If nobody holds the reference to `TcpClientTransactions` instance and nobody holds the reference to `TcpClientTransaction` instances, which were created by this `TcpClientTransactions`, the only references left outside of garbage objects it's a `WeakReference` to `ThreadLocal` from threads which have used this `TcpClientTransactions` instance. These weak references don't prevent to collect garbage objects. 
+Did I miss something?",1,1,1,0,0,0,1,1,0,0,1,0,1
+ignite,8465,"```suggestion
+Defragmentation is a costly operation in terms of disk IO. To avoid slowing down user operations, note that defragmentation cannot be executed on a regular node joined to the cluster. To perform defragmentation, you need to request it first on a particular node or set of nodes and then restart them.
+```","Disagree on the suggested change: ""do not execute"" implies that it is possible to do the action but is not recommended. In reality executing defragmentation on a regular node is not possible at all. How can we rephrase this to catch this meaning?",1,1,1,0,0,0,1,0,0,0,1,1,0
+ignite,3501,Do you expect backoffCoeff will ever change ?,Do you expect backoffCoeff will ever change ?,1,1,1,0,0,0,0,1,1,0,1,0,0
+incubator-heron,1398,"Could you pass a stateManager instead of a runtime here? Better to not bury the stateManager initialization code.
+
+Actually, if PackingPlan is updateable in ZK why is this method needed? Couldn't we just need to do thisL:
+
+```
+stateManager.setPackingPlan(serializer.toProto(updatedPackingPlan), topologyName)
+```
+","This is what I have understood, the implementations of `setPackingPlan` method will take care of updating the packing plan if it exists, or will create a node/file if it is not present. Is this correct?
+",1,1,1,0,1,0,1,0,1,0,1,0,0
+incubator-heron,2733,I think this `check quota` logic should be at the upper level rather than at this level. i.e. in `AuroraScheduler.addContainers(...)`,do you mean adding `check quota` to `AuroraController` interface,1,1,1,0,1,0,1,1,0,0,1,0,0
+incubator-heron,1976,Here and elsewhere can we throw the original exception and not wrap in RuntimeException?,"They are all checked exceptions and the initialize method does not support throwing an exception. I'm not sure what else to do, any ideas?",1,1,1,0,1,0,0,1,1,0,1,0,0
+incubator-heron,2080,"Just a clarification, this change basically doesn't log actual message whenever any error happens. Not only the OOM error.","ok, do you want me to add an `if` to see if exception is ` OutOfMemoryError`?",1,1,1,0,0,0,0,1,0,1,1,0,0
+incubator-heron,1980,MetricsCacheMgr is more proper for a topology level component. Tracker is cluster level component.,"Agree, `MetricsCacheMgr` could be another provider of metrics. We should talk about it.  Currently `Dhalion` depends on the `timeline` api of the `Tracker`. When requested for metrics over 300 seconds, `Tracker` will provide 5 readings one for each of the 60 second intervals. Could you please point at some `MetricsCache` examples for this?",1,1,1,1,1,0,0,0,0,0,1,1,1
+incubator-hugegraph,493,we can use member method here instead of static method,"but how to use non-static method in other class directly, like `UpdateStrategy.func()` 
+unless using `UpdateStrategy.SUM.func()`? (and enum is not stable)
+",1,1,0,0,1,0,0,1,0,0,1,0,0
+incubator-hugegraph,1234,remove this line if possible.,which line need to remove?pls tell me line num.,1,1,1,0,0,0,0,1,0,1,1,0,0
+incubator-kie-drools,1304,The real change is here.,"@manstis I'm not sure if I get the point correctly. Replacing:
+```java
+copy.values = new ArrayList<>(getValues());
+```
+by
+```java
+copy.values = copy.getValues();
+```
+would call [this method](https://github.com/karreiro/drools/blob/1fbca3cab3384b7574b908a59ce77df56dec0aad/drools-workbench-models/drools-workbench-models-datamodel-api/src/main/java/org/drools/workbench/models/datamodel/rule/DSLSentence.java#L207-L223). In that case, the value would be always `""city""` and I'm copying the `values` field to avoid that.
+
+We could replace the line above with the following line, too:
+```java
+copy.values = getValues();
+```
+However, I tried to keep the intention of the previous behavior of this method, which was to ""clone"" the List (since it was adding the elements from the original `DSLSentence` in a new List instance).
+
+Am I missing something? :-)",1,1,1,0,1,0,0,1,1,0,1,1,0
+incubator-kie-drools,2637,Suggestion to change the name since this test checks only for model given not for the whole scesim given,"What do you mean? The name of the test is just the name of the method it tests, in this case `extractGivenValues`",1,1,1,0,1,0,0,1,0,1,1,0,0
+incubator-kie-drools,4541,"I apologize again for missing also this one: IMHO that ""prepareClassLoader"" shold be somthing completely hidden to the client-code; it should happen at instantiation time, and should automatically put in the memoryclassloader all the classes that have been previously compiled but are not present in that classloader: am I clear ? does this make sense ?
+Reason for that is because on one side this ""prepareClassLoader"" creates a ""mutable state"" entry point that would be impossible to control; on the other side, ""client code"" must not be worried to such lower detail: that's responsibility of the Context itself","Sure, I think I can do that. Do you mean classes of all FRIs (= all classes in GeneratedClassesRepository)? or shall I add a builder method to take FRIs so that we can add classes of specific FRIs?
+",1,1,0,0,1,0,0,0,1,0,0,0,0
+incubator-kie-drools,3237,Why this hack?,"This is to force the native java compiler to work with a 1.8 source level (or less). If I make it run with 9+ (i.e. with JPMS) I get weird compilation errors like the following
+`UNKNOWN (-1:-1) : module jdk.accessibility reads package  from both java.base and java.naming`
+I spent quite a lot of time trying to figure out what's going on here but I'm clueless so far. I understand that this a ugly hack and something that I should fix asap. Also it is quite surprising that ecj seems not suffer of the same problem, but still I haven't been able yet to figure out why.",1,1,1,0,0,0,0,1,1,0,1,0,0
+incubator-kie-kogito-runtimes,1347,"We can probably revisit `SessionRuleUnitInstance` class entirely (@evacchi wdyt?) but for now please move it to `kogito-legacy-api` module: as far as I remember it is an attempt to wrap a session in a Unit.
+In this case you can avoid this explicit cast and just use `org.kie.kogito.legacy.rules.KieSession`","@danielezonca I'm not sure it makes sense to move `SessionRuleUnitInstance` to the `legacy-api` module. That was indeed an attempt to wrap a session into a rule unit, but if you want to use the legacy API, by definition you don't want to use the rule unit imo. ",1,1,1,0,1,0,0,1,0,1,1,0,0
+incubator-kie-kogito-runtimes,750,"I don't think we should ""hide"" a serialization exception in an empty result. What about propagate the exception?",Propagate the exception up to where? I need advise here,1,1,1,1,1,0,0,1,1,0,1,1,0
+incubator-kie-kogito-runtimes,1549,"@evacchi 
+My understanding is that all these PR resolve about
+1) wrapping original result inside a ""DataContext""
+2) invoke it asynchronously
+
+Am I right ?",not sure why you say `asynchronously`; this is all synchronous,1,1,1,0,1,0,0,0,1,0,1,0,0
+incubator-kie-kogito-runtimes,1329,"This BOM is intended to group and version kie7 artifacts so that the perimeter is clearly defined. This required to create an ""independented"" and standalone module (that can be reused also by OptaPlanner for example) that is not inheriting from `kogito-build-parent` (otherwise it will also take all dependencyManagement). 
+The consequence of this is that `version.org.kie7` property is defined here.
+@mareknovotny 
+Wdyt?","What do you mean?
+Some artifacts has a different GAV (org.kie.kogito instead of org.drools) on purpose because they are designed to only work in kogito and viceversa.
+Some other will be removed in the future (for example I expect `kie-api` will be removed or at least massively changed).
+In general we don't want to include all kie7 artifacts because only few of them (mainly from drools.git repo) are necessary so we cannot reuse existing kie-bom or similar.
+It is not clear to me what you are proposing ðŸ¤” ",1,1,1,0,1,0,1,1,0,0,1,0,0
+incubator-kie-kogito-runtimes,922,"since this change, and others below, shouldn't that reflect also on ALL the `...CompilationProvider` classes??","Sorry but I don't understand what do you mean. I just created a local variable instead of instantiate multiple times  `CDIDependencyInjectionAnnotator`.
+Can you please clarify your comment?
+",1,1,0,0,1,0,0,0,1,1,1,0,0
+incubator-kie-kogito-runtimes,1757,@evacchi Is it fine to raise a validation warning at the GeneratedFile constructor like this?,@evacchi Is it fine to raise a validation warning at the GeneratedFile constructor like this?,1,1,1,0,1,0,0,0,0,0,0,0,0
+incubator-kie-optaplanner,439,ExecutorService needs to be shutdown to properly clean up running threads. Please see https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ExecutorService.html for details.,"It looks too much complication for executing one task here, is there a reason not to use new Thread().start() instead?",1,1,1,0,0,0,0,1,0,1,1,0,0
+incubator-paimon,23,"Nit: line#150 `assertThat(globalCommitter.getCommittedData().isEmpty()).isTrue();` can be shorten as `assertThat(globalCommitter.getCommittedData().isEmpty())`. Since GitHub does not allow comments on unchanged lines, I post here.",What do you mean? `assertThat` always needs be invoked return class.,1,1,1,0,1,0,0,1,1,1,1,0,0
+iotdb,5418,Shall we rename the related term ```meta``` in this pr to ```schema```? ```Meta``` may involve more items and our work only focus on ```Schema```.,"But how about other operators (if have), e.g. trigger, TTL, auth, count...    so,  what about create a `schema`  dir under the meta?",1,1,1,0,0,0,0,1,1,0,1,0,1
+iotdb,38,"you should use {} instead of %s:
+```LOGGER.error(""[ERROR] Failed to operate on file, because {}"", e.getMessage());```","Could I remove `String.format()`?
+just like:
+`LOGGER.error(""[ERROR] Failed to operate on file, because {}"", e.getMessage())`;",1,1,1,0,1,1,0,1,0,0,1,0,0
+iotdb,440,"I wonder whether the ""quit"" statement has a chance to reach the server.","Actually, even if the statement is a quit statement, no logical plan will be generated. Do you suggest removing the grammar definition here?",1,1,1,0,0,0,1,0,1,1,0,1,0
+iotdb,5046,"* `setExpression` will be called twice, once in `transformFilterOperatorToExpression` of `QueryOperator` which generating logical plan, once in `QueryRouter` after optimizing this expression. Although it won't make it it doesn't affect its correctness, the performance may be worse than before.
+* In align by device query, the `deviceToMeasurements` should only contains current device, in your current implementation, all the devices will be saved in `deviceToMeasurements`, even if the devices that has been traversed.
+","Oh, Why don't we move `optimizing this expression` from `QueryRouter` to `QueryOperator` when generating this expression, then setExpression will be invoked only once.",1,1,1,0,1,0,0,1,1,1,1,1,1
+iotdb,11120,does timefilter push down?,"I'm not sure, is it not enough to put it in planRawDataSource?",1,1,1,0,0,0,0,0,1,0,1,0,0
+iotdb,5033,"channel close,  but FileOutputStream does not close.","Change code like this?
+`
+try (FileOutputStream outputStream = new FileOutputStream(filepath, true);
+        FileChannel channel = outputStream.getChannel()) {
+`",1,1,1,0,1,0,0,0,0,0,1,0,1
+iotdb,101,The naming is confusing.,Do you mean DATA_CHUNK_SIZE?,1,1,1,1,1,1,1,0,1,0,1,0,0
+iotdb,1627,Path and PartialPath are not in the same package now. I'm not sure it's ok.,why should be in the same package?,1,1,1,0,1,0,0,0,0,0,1,0,0
+iotdb,154,"`Map<Integer, String> map = physical ? proxy.getPhysicalRing() : proxy.getVirtualRing();` is better?","`Map<Integer, String> map = physical ? proxy.getPhysicalRing() : proxy.getVirtualRing();` is better?",1,1,1,0,0,0,0,1,0,0,1,0,0
+jackrabbit-oak,171,"I think breaking here is incorrect, in case of ""order by a, b"" and an index that only sorts by property a. Also, what if ""order by a desc"", and the index sorts ascending?","@thomasmueller ...agree with the order a,b point ..will make the changes to handle that 
+
+But with the desc/asc thing ..we don't define the in our indexes if it should sort asc or desc..we just add ordered = true on the prop..so shouldn't the index always  handle both the cases ? Or maybe I am missing something ? ",1,1,1,0,1,1,0,1,0,0,1,0,0
+jackrabbit-oak,465,"can we add one more test for the case `value is not null`, or does it exist already?","@averma21  - yes there are multiple tests. 
+testEqualityQuery_native - > tests simple equality condition
+testEqualityInequalityCombined_native -> equality and inequality
+testInequalityQuery_native -> tests inequality with nodes created with this property and also without this property.
+
+So effectively the condition that x<>1 should return nodes where x is set and not equal to 1 is being tested. I hope this is what you were asking for - right ?",1,1,1,0,1,0,0,1,1,1,0,0,0
+jackrabbit-oak,823,redundant (set in asf parent),which part exactly is redundant?,1,1,0,0,1,0,1,1,1,1,1,0,1
+jackrabbit-oak,1202,"Just an idea: if we don't need ""path"" and only the array, then maybe we could store the number of entries and then the entries separately?",Could you elaborate? I do not understand the suggestion.,1,1,1,1,0,0,0,1,0,0,1,0,0
+james-project,1525,It is not the JMAP startUp checks that should generate the keystore...,"It is based on your suggestion ""please move the key generation out of JMAP-draft. Suggestion: server/container/guice/common""
+
+Can you give more detail?  
+I tried to move the SecurityKeyload to `server/container/guice/common`, but see it is a bit not correct, So I only move the generateKeystore method 
+
+",1,1,1,0,1,0,0,1,1,0,1,0,0
+james-project,1707,Use Optional,You mean to use Optional{Component} as value in the map?????,1,1,0,0,0,0,0,1,1,0,1,0,1
+jena,1616,"@afs Is there not already a query iterator that supported this pattern?
+
+I see a `QueryIterConcat` referenced in the code deletions so why was that not suitable?  Could that have been modified to solve the issue rather than introducing a new class","sorry, I don't understand. RepeatApply is an abstract class that takes a QueryIterator and repeatedly calls nextStage, how will that help here?",1,1,1,0,1,0,1,1,0,0,1,0,0
+jena,1616,"@afs Is there not already a query iterator that supported this pattern?
+
+I see a `QueryIterConcat` referenced in the code deletions so why was that not suitable?  Could that have been modified to solve the issue rather than introducing a new class",should I delete this class and replace it with QueryIterPlainWrapper.create(Iter.flatMap(...))?,1,1,1,0,1,0,1,1,0,1,1,1,1
+jmeter,477,can you surround it with log.isDebugEnabled() ?,"Hi, I found a lot of examples where calls to log.debug() are not surrounded with log.isDebugEnabled(). Others are, though...  When to use which approach?",1,1,0,0,1,0,0,0,0,0,1,0,0
+kafka,4159,nit: add `final` (same below),Not sure where the final should be. Maybe you're referring to the next comment?,1,1,1,0,1,0,0,1,1,1,1,0,1
+kafka,2755,doesn't seem this is necessary? couldn't we just pass the parameters here directly to `putConnectorConfig` and the `ConnectorInfo` constructor? same with `bodyOut` in tests below.,Not sure I fully understand this comment tbh. Do you mean we just need testPutConnectorConfig and skip the extra tests that actually call createConnector?,1,1,1,0,0,0,0,1,1,1,1,0,0
+kafka,13562,"I know you just translated this to Java, but I think we can add null/empty checks for the input parameters.","@fvaleri ah, I'm sorry, I investigated it finally and worked around.
+What do you think about this approach?
+```
+public static void validatePortOrExit(OptionParser parser, String hostPort) {
+    if (parser == null || hostPort == null || hostPort.isEmpty()) {
+        CommandLineUtils.printVersionAndExit();
+        return;
+    }
+}
+```
+Should I use printUsageAndExit if parser will be null or what will be better to indicate an error?",1,1,1,0,1,0,0,1,0,0,1,0,0
+kafka,13122,"I think that we should keep using `joptsimple` with the `CommandDefaultOptions` abstract class, rather than migrating all commands to `argparse4j`. The vast majority of commands do not use `argparse4j`.
+
+Then, the `joptsimple` (current) no-args output is very different:
+
+```sh
+This tool helps to query log directory usage on the specified brokers.
+Option                                  Description                           
+------                                  -----------                           
+--bootstrap-server <String: The server  REQUIRED: the server(s) to use for    
+  (s) to use for bootstrapping>           bootstrapping                       
+--broker-list <String: Broker list>     The list of brokers to be queried in  
+                                          the form ""0,1,2"". All brokers in the
+                                          cluster will be queried if no broker
+                                          list is specified                   
+--command-config <String: Admin client  Property file containing configs to be
+  property file>                          passed to Admin Client.             
+--describe                              Describe the specified log directories
+                                          on the specified brokers.           
+--help                                  Print usage information.              
+--topic-list <String: Topic list>       The list of topics to be queried in   
+                                          the form ""topic1,topic2,topic3"". All
+                                          topics will be queried if no topic  
+                                          list is specified (default: )       
+--version                               Display Kafka version. 
+```
+
+This is the new no-args output with `argparse4j`:
+
+```sh
+usage: kafka-log-dirs [-h] --bootstrap-server BOOTSTRAP-SERVER [--command-config COMMAND-CONFIG] [--topic-list TOPIC-LIST]
+                      [--broker-list BROKER-LIST]
+kafka-log-dirs: error: argument --bootstrap-server is required
+```
+
+@ijuma @mimaison WDYT?","Sorry, then may I get a bit of clarification on how do you envision this to work? Do you envision that a Java compatible copy of `CommandDefaultOptions` is written? I am asking this because I was battling with moving ConsoleConsumer and there I ran into the following problem:
+```
+abstract class CommandDefaultOptions(val args: Array[String], allowCommandOptionAbbreviation: Boolean = false) {
+  val parser = new OptionParser(allowCommandOptionAbbreviation)
+...
+```
+```
+private static class ConsumerConfig extends CommandDefaultOptions {
+        ConsumerConfig(String... args) {
+            super(args, false)
+            
+            ... = this.parser(); <--- Cannot access joptsimple.OptionParser
+```
+Is it in general that we are only trying to move the commands from Scala to Java or do we want a complete break from Scala classes? If we are completely moving to Java does this mean that `CommandLineUtils` needs to be rewritten first?",1,1,1,0,0,0,0,1,1,0,1,1,0
+kafka,1946,"I'm not a huge fan of debug statements like this, but supposedly they helped others. Is the idea that we have enough debugging statements in the producer and consumer to figure out these things anyway?
+","But I guess you can add them back when you need them easily enough? I found them a little distracting when reviewing 3396 and some of them were even incorrect or misleading (which made me think they had probably just been copied from an existing test).
+",1,1,1,0,0,0,0,1,1,1,1,0,1
+kafka,3618,nit: parameter/line formatting,Do we have that rule actually? We have lots of method definitions where multiple parameters sits in the single line. I think we would only have multiple lines if all the parameters do not fit in a single line.,1,1,1,0,0,0,0,1,1,0,1,0,0
+kafka,6362,"SchemaAndValue doesn't include headers, so why would this method try to stuff them in there?","Correct, but what if I need to get access to the headers in order to transform a raw Kafka message payload to a SchemaAndValue object?
+
+An example here can be specifying a Schema Id as a header and using Schema Registry to get it.",1,1,1,0,1,0,0,1,0,1,1,1,0
+kafka,14575,"If I wrote this comment, I apologize, but when it says the method should ""fail"", does that mean throw an exception, log an error, or something else?","No you didn't write it, I copied it from some other place ;) I ll log an error and will stop proceeding, do you think we should capture that here in docs or should not write this line itself?",1,1,1,0,0,0,0,1,1,1,0,0,1
+kafka,2304,The issue with using a real file is that you can't test the scenario that we are trying to fix: `FileChannel.read` returns before the buffer is full. See `FileRecordsTest.testTruncateNotCalledIfSizeIsBiggerThanTargetSize` for an example of a mocked fine channel.,"I can use EasyMock to test throwing IOExceptions for EOF, how can I use it to test ""readFully does not return until buffer if full""? A mocked ByteBuffer? If using a mocked bytebuffer, I would have to mock 'hasRemaining' which is a final method. Seems EasyMock does not support to mock final methods. Am I correct?",1,1,1,0,1,0,1,1,0,1,1,1,0
+kafka,4467,"I'm not sure the handling of configs here is quite right. I think it would make more sense to check if there are *any* properties set with the prefix `internal.key.converter` (and `internal.value.converter` for that case). There are other configs that could be overridden and really at this point, if the user has specified *anything* explicitly, we want to still respect those settings. Only after the deprecation period should there be cases where we might ignore/modify settings they explicitly specify.
+
+In other words, I'm not sure a version of this code that does not maintain use of `config.originalsWithPrefix(""internal.key.converter"")` and `config.originalsWithPrefix(""internal.value.converter"")` can properly maintain compatibility.","Agree, however I am not pretty sure if we have more configs other than `internal.key.converter.schemas.enable` and `internal.value.converter.schemas.enable` which qualify the prefix search using `config.originalsWithPrefix(""internal.key.converter."")` and `config.originalsWithPrefix(""internal.value.converter."")`. That is why I used the full name of these configs instead of filtering them with prefix. 
+
+Is there any existing config which has `internal.key|value.converter.` as prefix and we need to take care of that in Worker's context ?",1,1,1,0,0,0,0,1,1,0,1,0,0
+karaf,301,`Regions` does not sound a very good name to me...  Too vague.  What about something like `RegionInstallationSupport` ? Another thought ?,I was also unsure. Not sure if RegionInstallationSupport is better but if you prefer it that is fine for me.,1,1,0,0,0,0,0,1,1,0,1,0,0
+maven,1231,"Please don't do this: we went a LONG road from Maven2 to NOT have code (and assumptions) like this sprinkled across the codebase.
+
+The API offers you repositoryBaseUrl and relative resource path, so just color those two differently (as I agree, repo URL IS important, it may be affected by user settings) while resource path IS NOT important....
+",please don't do what? use Maven 2 repository layout as a fact?,1,1,0,0,1,0,0,1,1,0,1,0,0
+maven,1099,"include a return for every case, as relying on fallthrough is error-prone","Does that mean separate returns? Like
+```
+                case STRING_ITEM:
+                    return 1;
+                case COMBINATION_ITEM:
+                    return 1; 
+```",1,1,1,0,1,0,0,1,1,0,1,0,0
+maven,421,did you override default implementation from interface?,"I do not understand the question (or why you are asking it). Actually that above code *is* effectively overriding the default implementation of the interface, and it was explicitly done because @rmannibucau asked for this.",1,1,1,0,1,0,0,1,1,1,1,0,1
+maven,676,`repository which`,you mean drop the comma that splits the sentence in more readable parts (for a french reader)?,1,1,1,0,0,0,0,1,1,1,1,0,1
+maven,1080,"str != null && !str.isEmpty() 
+
+seems a little more straight-forward","I don't understand, you mean:
+```
+final int strLen = str != null && !str.isEmpty() ? str.length() : 0;
+```
+I kinda fail to see how adding an addition condition makes things more straightforward, but I guess that's a matter of taste, as a lot of things when we go to that level.",1,1,1,0,0,0,0,1,1,0,1,0,0
+maven,1244,Would it make sense to skip this class?,@michael-o @elharo so I don't really understand what you both want / imply.  Could you be more specific please?,1,1,1,0,1,0,0,1,1,0,1,0,0
+maven-surefire,344,"Both instance fileds are in wrong class. We have two plugins in this project, so you have to generate getter and setter for these fields. Both must be in `SurefirPlugin` class, see [this](https://github.com/apache/maven-surefire/blob/master/maven-surefire-plugin/src/main/java/org/apache/maven/plugin/surefire/SurefirePlugin.java#L99) and also in [here](https://github.com/apache/maven-surefire/blob/master/maven-failsafe-plugin/src/main/java/org/apache/maven/plugin/failsafe/IntegrationTestMojo.java#L116).
+The reson is the prefix in the property. Due to AbstractSurefireMojo is an abstract class, you have to generate getters and setters and use them instead of fields in AbstractSurefireMojo.
+Regarding the naming conventions pls start the name of fields and properties with ""include"" and ""exclude"", and rename junit to ""junit5"" to make it clear that we are not aiming for JUnit4 and 3.
+Additionally both should be String[] because the history shows us that people want to have more than one value in our config properties, pls see [the tutorial for MOJO](https://maven.apache.org/guides/plugin/guide-java-plugin-development.html#parameter-types-with-multiple-values).","Hmm I follow simillar approach like for ""groups"" but now I am a little confused regarding those fields... 
+Logic to load values for those fields is in AbstractSurefireMojo but if I will not define them here, so how I can get values for them?
+Can you provide me some example field with simillar flow which you expect?
+",1,1,1,0,1,0,1,1,1,0,1,0,0
+maven-surefire,517,Check the inheritance because I think this is not ok either.,I could do as you suggest and extract the logic to `setThreadCount` and `setParallel` methods. My current approach was intended to limit the scope of revisions to this single class. Would you prefer that I refactor the implementation? This would reduce the complexity a bit while expanding the scope of this PR.,1,1,1,0,1,0,0,1,1,0,1,0,0
+metron,497,change to `SASL_PLAINTEXT`,Not sure what's going on here - I ran through this again and it still worked with PLAINTEXTSASL and not SASL_PLAINTEXT. You're running this on full dev?,1,1,1,0,0,0,0,1,1,0,0,0,0
+metron,334,"1. If GetProfile attempts to read a profile with the wrong window duration, will the user get a reasonable error message?  I was unable to find this in GetProfile.java or GetProfileTest.java.
+2. Unlike the profiler, it seems to me that there may be need for multiple simultaneous clients for different users, some of which may be consuming historical profile data that was taken with different window duration (and other settings) than is currently in use at the time the client is run.  Therefore, I suggest that GetProfile should also take an optional override set of config arguments (any or all of profiler.client.\* , possibly excepting table.provider) so that clients accessing different data won't stomp on each other. 
+","1. Define ""wrong window duration""?  Can you give me an example of what you're thinking of?
+",1,1,1,0,1,0,1,1,0,0,0,0,0
+metron,421,"Unrelated to this PR, but I thought it was un-Apache to put individual's names and emails in the source code?","I'm not even sure who we should talk to about how it should be handled.  I'm more than happy to adjust the changelog as needed, but I need to know how to change it first.",1,1,1,0,1,0,0,1,0,1,0,0,0
+metron,851,"Can we reword this?  It needs to be clear that some things cannot be deserialized if they have an invalid configuration.
+",I'm not sure exactly what you're looking for.  Can you suggest some specific text?,1,1,1,0,0,0,0,1,1,0,0,0,0
+metron,1403,Can you double-check the [debug log statements here](https://github.com/apache/metron/blob/2d2cec749c52659f4cf5b9177047b018222a13cd/metron-platform/metron-elasticsearch/src/main/java/org/apache/metron/elasticsearch/bulk/ElasticsearchBulkDocumentWriter.java#L91-L98) to ensure they are still correct based on this change?  I don't think they are any longer.,Are you sure these are incorrect?  The shards are coming directly from the response so I would expect it to be accurate.,1,1,1,0,1,0,0,0,1,0,0,0,0
+mina-sshd,141,Don't we need to close the local acceptor as well ?,"Well, but... I don't known how to do... '':-) (any suggestion?)",1,1,1,0,1,0,0,0,0,0,1,0,0
+netbeans,2768,That could be JComboBox<Level>,you mean without  the generic ?,1,1,1,0,1,0,0,1,0,0,0,0,0
+netbeans,3988,Why?,"Executing 
+NbBundle.getBundle(MapFormat.class).getString(""MSG_UnmatchedBraces"") 
+throws exception saying thet no bundle has been found. 
+so I detered this execution to be able to run tets
+
+better solution is to make sure bundle exists while unit tests are being executed - I don't know how to do it yet
+
+",1,1,1,0,1,0,0,0,0,0,0,0,0
+netbeans,2023,"This needs fixing before we can merge. It's causing the verify libs and licenses test to fail. Each line must contain two paths.  Is it meant to be a duplicate of something?  If so, needs to have the other path.  If not, then the whole line needs removing.
+
+Check with `ant verify-libs-and-licenses`",This line needs to be removed and then it repairs the verify-libs-and-licenses.  Do you want me to merge the remote branch into my local and make the change?  I don't want to add more commits if not needed.,1,1,1,0,1,0,0,0,0,0,0,0,0
+netbeans,4792,"any reason for iterating backwards here?
+instead of:
+```java
+      for (TabData projectTab : tabs) {
+```","Oh yeah, you are right.
+
+Not sure if I have done it correctly, is this the usage in ButtonPopupSwitcher?
+```
+DocumentSwitcherTable dst = new DocumentSwitcherTable( controller, createSwitcherItems(controller), y );
+dst.closeDocumentList( item, controller );
+if( controller.getTabModel().size() == 1 ) {
+    SwingUtilities.invokeLater(this::hideCurrentPopup);
+}
+```
+Or should I move the method to static ClosingUtility class and initialize thate?",1,1,1,0,1,0,0,0,0,0,0,0,0
+nifi,5475,"Instead of using the URL host, what do you think about changing this to `null` and falling back to the current behavior? ","I like your idea, however, this edge case was verified by @markap14 . Which one should I pick in this situation?",1,1,1,0,0,0,0,0,0,0,1,0,0
+nifi,3541,I'd suggest supporting ExpressionLanguage with FLOWFILE_ATTRIBUTES scope.,Couldn't figure out how to do this cleanly since it would require checking that I have a number on every onTrigger execution.,1,1,1,0,1,0,0,0,0,0,1,0,0
+nifi,7752,"```suggestion
+        return new MapRecord[]{new MapRecord(recordSchema, map), new MapRecord(recordSchema, map1), new MapRecord(recordSchema, map2)};
+```","@exceptionfactory I am sorry can you please explain what the suggested change here is? This what I am seeing which looks identical.
+![image](https://github.com/apache/nifi/assets/8440116/737680ef-c443-4301-862c-839ab5217d24)
+",1,1,1,0,1,0,1,0,0,0,1,0,0
+nifi,2820,"Are you using ""Template""  in the json you output?
+I thought you removed that.  The schema should be what is in the record flow file exactly","Did you missed any attachments in your comments??  Are you referring something like this.. 
+[dataschema.txt](https://github.com/apache/nifi/files/2217231/dataschema.txt)
+Isn't it requires field level description??",1,1,1,0,1,0,0,0,1,0,0,0,0
+nifi,1016,"@olegz once gave me a hint that there's an issue with it since init() method as well as few others are invoked more then once per life-cycle of a processor (see https://issues.apache.org/jira/browse/NIFI-1318).
+
+Consider using a static initializer
+","Do you have a working example of using a static initializer?  I may be wrong but I believe the ProcessorInitializationContext is passed only in runtime.  Thanks
+",1,1,1,0,1,0,0,0,1,0,0,0,0
+nifi,2138,"You say in the description:
+
+> A value of 0 means no timeout. NOTE: Non-zero values may not be supported by the driver.
+
+Shouldn't the test be on a non-zero value here?","Do you suggest an arbitrary value like
+````java
+stmt.setQueryTimeout(1); // just checking driver supports query timeout
+````
+?",1,1,1,0,1,0,0,0,0,0,0,0,0
+nifi,5324,"Rather than making this property an attribute name, what do you think about changing it to `Schema` and supporting expression language using FlowFile attributes?  That would allow direct configuration of the Schema as a processor property, while also giving the option for FlowFile attribute based validation.","I'm not sure I follow your recommendation here. The XML Schema is specified in the processor property ""Schema File"". The ""XML Source Attribute"" is specifying the location of the XML to be validated; it is not the schema.",1,1,1,0,1,0,0,0,0,0,1,0,0
+nifi,5475,I don't think this should be required,Maybe I'm just not familiar of the concept what required means here. I thought in this situation it practically means we are not allowing null as a value. Since here null doesn't add anything to us I decided to set it true. Did I do it wrong?,1,1,1,0,1,0,0,0,0,0,1,0,0
+nifi,7677,"Switching to `nifi.groovy.version` should push this to 3.X, so we need to do a L&N check here.",@MikeThomsen do you have any guidance on how to do that? I looked at other processors/controllers that used groovy and they seem similarly out of compliance with your comment. So just not sure how best to generate this.,1,1,0,0,1,0,0,0,0,1,0,0,0
+nifi,3105,Should this be referenced here? The controller service never uses any Avro dependency.,Should this be referenced here? The controller service never uses any Avro dependency.,1,1,0,0,0,0,0,0,0,0,0,0,0
+nifi,4836,"For the purposes of this unit test, an implementation of `SecureHasher` could be instantiated directly, perhaps one that performs more quickly than Argon2 for testing performance purposes.",Does this mean a custom TestSecureHasher impl? Should it be local to this test only? All the existing SecureHasher impls appear to perform approximately the same for this test.,1,1,0,0,0,0,0,0,0,0,0,0,0
+nifi,5412,The `logDetails` boolean flag is not completely clear as it appears up being interpreted as `info` versus `debug`. What do you think about renaming it to `logInfoEnabled` or something similar?,"I considered changing it to something like that but felt like it was just more confusing. If `true`, it logs at info level. That's all that'll generally show up in logs. So for any typical deployment, `false` = do not log. I.e., ""Do you want the details showing up in typical logs or no?"" ",1,1,0,0,0,0,0,0,0,0,1,0,0
+nodejs_node,45982,why is this needed?,"To pass the `joinDuplicateHeader` option from client request to `parserOnHeadersComplete` . maybe there is some better way?
+I took inspiration from `parser.maxHeaderPairs` ",1,1,0,0,1,0,0,0,0,0,1,0,0
+nutch,515,"Should be httpmime 4.5.10 (httpcore 4.4.12), otherwise you'll see:
+```
+$> bin/nutch indexchecker  -Dplugin.includes='protocol-okhttp|parse-tika|index-(basic|more|anchor)|indexer-solr' \
+       -doIndex https://localhost/
+...
+Exception in thread ""main"" java.lang.NoClassDefFoundError: org/apache/http/entity/mime/content/ContentBody
+        at org.apache.solr.client.solrj.impl.HttpSolrClient$Builder.build(HttpSolrClient.java:952)
+        at org.apache.nutch.indexwriter.solr.SolrUtils.getHttpSolrClient(SolrUtils.java:59)
+        at org.apache.nutch.indexwriter.solr.SolrIndexWriter.open(SolrIndexWriter.java:107)
+        at org.apache.nutch.indexer.IndexWriters.open(IndexWriters.java:216)
+        at org.apache.nutch.indexer.IndexingFiltersChecker.process(IndexingFiltersChecker.java:296)
+        at org.apache.nutch.util.AbstractChecker.processSingle(AbstractChecker.java:85)
+        at org.apache.nutch.indexer.IndexingFiltersChecker.run(IndexingFiltersChecker.java:132)
+        at org.apache.hadoop.util.ToolRunner.run(ToolRunner.java:76)
+        at org.apache.nutch.indexer.IndexingFiltersChecker.main(IndexingFiltersChecker.java:305)
+Caused by: java.lang.ClassNotFoundException: org.apache.http.entity.mime.content.ContentBody
+```","Hi @sebastian-nagel , i tried fixing this but with no positive results. Could you tell me how you fixed it?",1,1,0,0,1,0,1,0,0,0,1,0,0
+openmeetings,63,"I have changed `enabled` with `visible` since this block is confusing for items without download option
+I would like to get third opinion here @dkandrov WDYT?","which room menu items are you referring to ?
+That might be a bit of a different problem I think. I think the room menu items users are complaining cause it is around permissions. Not contextual. 
+Above button simply depends on if you click on a document or not in order to enable it. 
+But _EVERY_ user can see the button (if they can see the FileTree). Its not a permission thing. 
+Which I think would be a slightly different use-case again. Cause if you remove permissions from a user to do sth, I would argue probably you should also remove the UI elements, cause that is indeed confusing to disable them, cause the user thinks he just need to click the right icon to enable it.",1,1,0,0,1,0,0,0,0,0,1,0,0
+ozone,59,"In my tests Freon created fewer chunks than expected (in 10 runs of 100 chunks it created total 711 instead of 1000).  Changing to sync command fixes it:
+
+```
+    timer.time(() -> xceiverClientSpi.sendCommand(request));
+```",That's interesting. Some of the chunks also missing for me. But what can be the problem with the `sendCommandAsync`? Isn't it a ratis bug?,1,1,0,0,0,0,0,1,1,0,1,0,0
+ozone,314,Can we log an error here? Same apply to other places?,"Would you prefer something like:
+`LOG.error(""Execution was interrupted"", e)` ?",1,1,0,0,1,0,0,1,1,1,1,1,0
+ozone,1169,"`unDeletedKeys` seems to be added in this [comment](https://github.com/apache/hadoop-ozone/pull/814/files#r429342829) on purpose.
+
+Will removing those two fields cause any compatibility issue?","As said, if we fail entire batch, not sure what is the purpose of unDeletedKeys.
+This will be required if we delete a few entries and skip them. Let me know if i am missing something here.",1,1,0,0,1,0,0,1,0,1,1,1,0
+ozone,1973,"I see this index added only ContainerReplica: but if we don't add it to ContainerID itself, this might leads to more changes.
+example: Once we received container replica report, the below API we use to updateContainerReplica:
+So, your thought is to add another field in this kind of API to carry index? otherwise we need to add that in ContainerID also.
+
+```
+private void updateContainerReplica(final DatanodeDetails datanodeDetails,
+                                      final ContainerID containerId,
+                                      final ContainerReplicaProto replicaProto)
+      throws ContainerNotFoundException, ContainerReplicaNotFoundException {
+```","Sorry, I didn't get the challenge here. Can you please explain it in more details?
+
+I am not sure if it's an answer: but I would prefer to keep it in a separated field to make sure we add it only when it's needed. It provides more visibility and code path which more easy to understand...",1,1,1,1,1,0,0,1,0,0,1,0,0
+ozone,3789,"I think we could remove this as well, as the plan with this patch was to default fix the metadata details on the right side and with the button you could close it. ",Could not Understand which Line  text need to remove siyao suggested to keep text.,1,1,1,0,1,0,0,1,1,1,1,0,0
+ozone,3895,"the check should involve "" + 2 > "" as range of increase can be 0-2 for source and target, eg, if max is 2, countDatanodeInvolved is also 2, it will fail","Yes, the range is 0-2.
+
+- If we're 2 datanodes away from the limit, we don't need to take any action.
+- This check is intended for the case when we're 1 datanode away from the limit. In this case we can allow only one new datanode at max to be selected. So, we restrict potential sources - that means only a new target can be selected now.
+- In your example where max is 2 and count is 2 (we've reached the limit), yes this check will fail but the check in `adaptOnReachingIterationLimits` will pass. It will restrict both sources and targets, so no new datanodes will be selected.
+
+Does this make sense or have I misunderstood your comment?",1,1,1,0,1,0,1,1,0,1,1,0,0
+ozone,4249,"Is this accounting for the case where the snapshot entry is a tombstone in cache (`CacheValue` is `Optional.absent()` like [here](https://github.com/apache/ozone/blob/ddbe71d3f90ae14ecf29f51c2265f1f9c3171668/hadoop-ozone/ozone-manager/src/main/java/org/apache/hadoop/ozone/om/request/key/OMKeyDeleteRequest.java#L158-L162)), which could happen when the snapshot eventually deleted from the `snapshotInfoTable`? Doesn't look to be the case to me?
+
+Therefore, IMO in addition to checking null, we would need to check whether the value is `Optional.absent()`. If it is `Optional.absent()`, `isSnapshotInCache` should still be `false` as we won't want to wait for a checkpoint dir that is deleted. Or we would have to put checks before this logic is even reached.","Thanks for finding this. Didn't get this, how is it covered by null check.",1,1,1,0,1,0,1,1,0,1,1,0,0
+ozone,4811,"Need handle for HSync, where object will be same but blocks are different as append mechanism","I'm confused, In hsync the keys will be `OpenKeyTable` until it is committed right? We here only care about those keys in `keyTable` and `deletedTable`. Please correct me if I'm wrong. ",1,1,1,0,0,0,1,1,1,1,1,0,0
+ozone,5267,"This part should not be removed, otherwise these basic checks become no-ops.","@adoroszlai  thanks for review, I have a question here.. If we'll not remove step -> `Execute tests`, then unit.sh (unit tests) will run as part of basic check and we want to separate out unit test run out of basic checks...? Did I understood anything wrong here ?",1,1,1,0,1,0,0,1,0,1,1,0,0
+ozone,4523,"OZONE_S3G_SECRET_HTTP_AUTH_TYPE -> 
+OZONE_S3G_SECRET_HTTP_KERBEROS_KEYTAB_FILE_KEY",Can you explain what should be changed here?,1,1,1,0,0,0,0,1,0,0,1,0,0
+paddlepaddle_paddle,1080,æ„Ÿè§‰è¿˜æ˜¯ContextProjectionBackwardDataï¼ŒContextProjectionBackwardWeightä¸¤ä¸ªæŽ¥å£æ¯”è¾ƒåˆç†ï¼Œè¿™ä¸¤ä¸ªFunctionè®¡ç®—çš„æ˜¯ä¸¤ä¸ªæ— å…³ï¼ˆæ²¡æœ‰ä¾èµ–ï¼‰çš„Bufferã€‚ä¹‹å‰ï¼Œæˆ‘æ³¨é‡ŠæŽ‰è¿™ä¸¤ä¸ªä»£ç æ²¡æœ‰åˆ æŽ‰ï¼Œä¸€æ˜¯ç¼–è¯‘é—®é¢˜ï¼Œå¦å¤–ä¹Ÿæ˜¯æƒ³ç€åŽé¢ä¿®æ”¹æ¥çš„ã€‚,"Just keep and update these interfaces. Do we need to have to output SequenceArg{output, sequence}?",1,1,1,0,1,0,0,1,0,1,1,0,0
+parquet-format,62,"This isn't quite what I meant. Have a look at the way it is done in the logical types PR. https://github.com/apache/parquet-format/pull/51/files#diff-0f9d1b5347959e15259da7ba8f4b6252R264
+
+That uses an empty struct in the union.",Do you mean in this way? It looks a bit strange and hard to understand from the code..,1,1,1,0,1,0,0,1,0,1,1,0,0
+parquet-mr,1078,Should it return if model is set successfully?,"sorry, can you expand on this a bit?",1,1,1,0,0,0,0,1,0,0,0,0,0
+parquet-mr,928,I think we should choose between `encryptPage` or `encryptPayload`,Can you clarify a little bit? Do you mean changing the method name? Or refactor the code?,1,1,1,1,0,0,1,0,0,0,0,0,0
+phoenix,1666,"You can refactor most of the catch block like this:
+```suggestion
+        catch (Exception e) {
+          SQLException parsedException = ServerUtil.parseServerException(e);
+          if (parsedException instanceof StaleMetadataCacheException) {
+            throw parsedException;
+          }
+          //retry once for any other errors
+          LOGGER.error(""Error in validating DDL timestamp for table {}: {}"",
+                    tableRef.getTable().getName().getString(), parsedException);
+          if (doRetry) {
+              validateDDLTimestamp(tableRef, false);
+              return;
+          }
+          throw parsedException;
+```","@shahrs87 any server side exception is wrapped in a `com.google.protobuf.ServiceException`, that is what the RPC returns. I have tried to differentiate between that case and the case when there is an IOException or SQLException raised by `CQSI.getAdmin` or `admin.getRegionServers`. We should parse server exception only in the former case, right? ",1,1,0,0,1,0,0,1,0,0,1,0,0
+phoenix,676,Do we need to setLength on the StringBuilder object? We can just directly call toString right?,"If it runs just once, there's still that trailing semicolon from line 1559, so the set length-1 gets rid of that semicolon
+Not sure if I should add something similar to the incompatible_client_server_jar error message in case of multiple messages?",1,1,0,0,1,0,0,0,0,0,1,0,0
+phoenix,794,"if other classes need access to this, better to pass it to them directly rather than pass an UARO and make them call this getter. ",We have to already pass the UARO coproc object directly. Are you suggesting passing the writer directly too?,1,1,0,0,1,0,0,0,0,1,1,0,0
+phoenix,213,"should be ""input.fetch != null || input.offset != null""
+","With respect to my comment below, if there is a limit, then we apply the rule, otherwise we do not (regardless of offset).
+ I may have the wrong idea here, but based on my understanding of offset, all of the test cases pass as expected. Are the test cases I have laid out in CalciteIT what you would expect?
+",1,1,0,0,1,0,0,0,0,1,0,0,0
+pinot,3671,What if srcUri is a directory and has files that actually need to copied over?,"Do you mean there's an edge case that Line 116 can't handle? 
+If src and dst are the same, regardless of src's type, nothing should be done.",1,1,0,0,1,0,0,0,0,1,0,0,0
+pinot,10418,"can we rephrase this comment as it is super confusing:
+`If we received events from stream but all were filtered, we attempt to ...` ?
+
+better yet,  use `batch.getMessageCount() == 0` ","yes, there was some wording issue but now I have updated it correctly, as for the last suggestion they are it is the same right, not sure what advantage would be to call the method again here if we have the outcome in messageCount other than the overhead of the call?",1,1,0,0,1,0,0,0,0,0,0,0,0
+pinot,8029,"IIRC, other parts of the code allow for read `int` as `long` and other such upcasting?",Should we allow to cast Integer to Long or not?,1,1,0,0,0,0,0,0,0,0,0,0,0
+pinot,1058,Would this be better served as an image element since it is content that conveys semantic meaning? Don't think `background-image` is a11y friendly.,"Agreed that an actual `img` tag is preferred for actual images. But since this is the linkedin logo (next to ""ThirdEye""), I feel that the element it is attached to ""thirdeye"" already conveys meaning. Do you see it differently? ",1,1,0,0,1,0,0,0,0,0,1,0,0
+plc4x,257,"I don't mind the TODOs, but can you open a JIRA for them so they have a chance of being done?",Ok. Are we allowed to open a JIRA for this? Is there any documentation about how to do it?,1,1,1,0,1,0,0,0,1,0,1,0,0
+plc4x,257,might be better for this to be .trace,I dont understand what does the .trace mean.. could you please provide further info about it?,1,1,1,0,1,0,0,0,1,0,1,0,0
+pulsar,15025,"This is non possible.
+The wrapper for KeyValue is created in AutoConsumeSchema.
+
+This class is like a utility class in Pulsar IO. Probably there is some mock test that creates the wrong object.
+
+I believe we can safely drop this",@eolivelli did you mean that org.apache.pulsar.io.core.KeyValue is not possible?,1,1,0,0,1,0,0,0,1,0,1,0,0
+pulsar,21311,"Or return `MessageMetadata`?
+
+","Or return 'MessageMetadata`?
+
+",1,1,0,0,0,0,0,0,1,0,1,0,0
+pulsar,16943,"It's better to capture `shared_from_this()` here because when the callback is executed, the reference count of `std::shared_ptr<ConsumerImpl>` might be zero so that `this` points to an invalid address. Capturing the `shared_from_this()` can extend the lifetime of the object to ensure `this` always points to a valid address.","Looks like there is a similar problem in the current codes. https://github.com/apache/pulsar/blob/c4bd7ae15a1e37075fb5a0b3b4636591ed2462c8/pulsar-client-cpp/lib/AckGroupingTrackerEnabled.cc#L153-L158
+
+Could you guide me on how to capture `shared_from_this()`? I haven't found a good way to solve it. ",1,0,0,0,0,0,1,1,1,0,0,0,0
+pulsar,9308,"generally it is a code smell to see a method that returns a CompletableFuture to throw an exception.
+
+The expectations for the caller is that any error will be reported by the CompletableFuture.
+
+can we catch all of the possible exceptions and then return a failed CompletableFuture ?","What specifically is ""bad"" there?",1,1,0,0,0,0,0,1,0,0,0,0,0
+pulsar,15301,"Seems `force` should not check the partition numbers, update directly...",I don't quite understand what you mean ðŸ¤”,1,1,0,0,0,0,0,1,0,0,0,0,0
+pulsar,4993,why it is `UnknownError`?,"I'm not sure what's the transaction error should use which `ServerError`, so I use `UnknowError` to represent all transaction errors. Maybe I should add a new ServerError type `TxnError` to represent transaction error? Any suggestions?",1,1,1,0,1,0,0,1,0,0,0,0,0
+pulsar,18489,"I think that we are not handling concurrent access on ""leaderElectionService""
+in ""start"" we re-assign the value to the variable.
+I would make it final or properly handle concurrent access","About the concurrent access to the member variables, still 'tableview' and 'producer' are not final.
+
+Could you explain why we need the synchronized access to the 'leaderElectionService' instance? 
+(Don't we also need to worry about the synchronized access to tableview and producer?)
+
+As long as it's non-null, shouldn't it be ok whether the return(leader) is from the old or new instance of 'leaderElectionService'?",1,1,1,0,1,0,0,1,0,0,0,0,0
+pulsar,8959,"This annotation is not really meaningful here by itself, can we add a comment?",Which annotation? Do you mean `@Deprecated`?,1,1,0,0,0,0,0,1,1,1,0,0,0
+pulsar,17700,"When I am writing this test, I found an interesting thing. We can allow the new lock to steal the existing lock that may hold by others(same value or same session). 
+
+I'm not sure if it's a big problem. You can use this test to verify this behaviour.
+
+Plus, steal lock behaviour may cause an infinity loop when they use the same value or a different value in the same session. the details please see `ResourceLockImpl#doRevalidate`
+
+https://github.com/apache/pulsar/blob/69f3f7471fa6faf24d4776d65e0509538c105d37/pulsar-metadata/src/main/java/org/apache/pulsar/metadata/coordination/impl/ResourceLockImpl.java#L239-L310
+
+Case:
+- lock 1 holds the lock with value `value-1`.
+- lock 2 tries to acquire the lock with value `value-1` got the `LockBusyException` then invoked `revalidate` to steal the lock. (delete and re-create it)
+- lock 1 receives the delete notification **after lock 2 already acquires the lock**. then lock1 tries to invoke `revalidate` to steal the lock again.
+- Under this assumption, we're going to fall into an infinite loop.
+
+This is a theoretical assumption because the situation is more difficult to simulate. Please take a look, I'm not sure if I missing something.","@merlimat  Could you please help to answer @codelipenghui  question?
+I'm not sure about the original design and it looks like we don't have the logic to acquire a resource lock with the same value in pulsar",1,1,0,0,0,0,0,1,1,0,0,0,0
+pulsar,18392,"please NEVER use a static variable for a CompletableFuture.
+The behaviour is really unpredictable.
+you cannot ever cache a CF",Sure. But could you explain more about why a static CompletableFuture cannot be used?,1,1,0,0,0,0,0,1,1,0,0,0,0
+pulsar,16822,"Should `available-functions` be a command of `pulsar-admin workers` instead ?
+For now, I've put it in `pulsar-admin functions` for consistency with sinks and sources.","Should `available-functions` be a command of `pulsar-admin workers` instead ?
+For now, I've put it in `pulsar-admin functions` for consistency with sinks and sources.",1,1,0,0,0,0,0,1,1,0,0,0,0
+pulsar,8244,"I don't think you should return `-1L` here. This will trigger `deleteLedger(bookkeeper, -1L)` in line 183. This is not a good implementation. You should return `null` and skip deletion if it is `null`.","From the comment after this `try-catch` block, I noted that some valid cursor ledger id could also be -1, so I return -1L here to simplify the filter logic from `filter(ledgerId -> (ledgerId != null && ledgerId >= 0))` to `filter(ledgerId -> ledgerId >= 0)`. But somehow I deleted the `filter` sentence, maybe it's during one refactor. it's my fault, I'll add `filter` here and still returns -1L in `catch` block. Or should still return `null`?",1,1,0,0,0,0,0,1,0,0,1,0,0
+pulsar,14681,"Since this method could be called from other threads in protocol handlers, I think we should consider using a concurrent data structure to back the `metricsProviders` list. Technically, it appears that the current implementation in the broker does not use a concurrent data structure, so I could be wrong about this class's thread safety requirements.","@codelipenghui as you contributed the code for the broker, can you say if we should use concurrent structures for `PulsarService`'s `pendingMetricsProviders` ?",1,1,0,0,1,0,0,1,0,0,0,0,0
+pulsar,6720,This does the same thing that `clientAddress()`. Should I keep it for backward compat ? It would be dead code... So maybe with a deprecation annotation ?,This does the same thing that `clientAddress()`. Should I keep it for backward compat ? It would be dead code... So maybe with a deprecation annotation ?,1,1,0,0,0,0,0,1,0,0,0,0,0
+pytorch_pytorch,23546,"REMOVE_ITEM is a bit magical, can we instead just add it only if the opposite condition is true?","You mean something like this?  
+```
+  if (NOT INTERN_BUILD_MOBILE)
+    list(APPEND TORCH_SRCS ${TORCH_SRC_DIR}/csrc/jit/export.cpp)
+    list(APPEND TORCH_SRCS ${TORCH_ROOT}/test/cpp/jit/test.cpp)
+  endif()
+```",1,1,0,0,0,0,0,1,0,0,0,0,0
+rocketmq,2983,Why associate stage offset about **mq** with **topic**?,"For example, there are 5 order messages. The only difference between them is the status(1,2,3,4,5).`stageOffset` means `status index` such as `0 1 2 3 4`, or you mean different MQ instances?",1,1,0,0,1,0,0,0,0,0,0,0,0
+rocketmq,6744,It's unnecessary to use a proxy in servers of Github actions.,I don't see what you mean. Can you explain it in detail,1,1,0,0,1,0,1,1,0,0,0,0,0
+samza,237,Minor: Space before '(' everywhere.,"This is not mentioned anywhere in gradle user guide.
+
+Can you please point out how this is gradle convention(I'm okay to change it but after adding space before '('  code looks ugly/weird to me)?",1,1,0,0,1,0,0,1,0,0,1,0,0
+samza,879,Log error message if this throws an exception?,"Not sure, if it would be necessary. Upper layers which call this method already catch and log exceptions before bubbling it up. Not sure if this will be necessary.
+
+What do you think?",1,1,0,0,1,0,0,1,0,0,1,0,0
+samza,397,This is in a lot of places. Would it be cleaner to add a helper/constructor in SystemAdmins that does this?,Not sure if I completely understand your comments. But I have updated the constructor of SystemAdmins to simplify the code. Can you see if it addresses the problem?,1,1,0,0,1,0,0,1,0,0,1,0,0
+samza,413,Why do we need an additional init() here? We already have start().,"The `init()` method gets called in job coordinators so that the `KafkaCheckpointManager` can create the checkpoint stream there. A better name could be `createStreams()`, but I wasn't sure if that was generic enough for the CheckpointManager interface. Any suggestions on a name or does `createStreams()` work?
+The problem with the `start()` method is that it gets called in the `OffsetManager.start()` method which is called in the `SamzaContainer.run()` method. That happens too late for checkpoint creation.",1,1,0,0,1,0,0,1,0,0,1,0,0
+samza,672,Is this fallback logic being handled at the call site?,"I'm not sure how in the past how containerContext could be null (maybe for unit tests), but with the new design, containerContext is never null. Therefore, the fallback is unnecessary. ",1,1,0,0,1,0,0,1,0,0,1,0,0
+seatunnel,4349,This field is not necessary,"Can you point out the number of rows boss?
+",1,1,1,0,0,0,0,1,0,0,1,0,0
+seatunnel,2022,"Please revert this change, and add doc for this plugin.",Can you tell me where can add doc for this plugin?,1,1,1,0,1,0,0,1,1,0,1,0,0
+seatunnel,3989,"If these two parameters are mutually exclusive, we should prompt the user during the check phase, not here.",I don't understand what you mean. I just judge whether the topic-pattern parameter is configured.,1,1,1,0,1,0,0,1,1,0,1,0,0
+seatunnel,1695,"You need to implement this method, otherwise the data received by http datasource will not be processed by downstream plugin","I am not very familiar with spark and spark stream, and the current implementation is referring to other demos. For what you said, split into the getData and rdd2dataset, I didn't find a usable implementation to do it. Can you provide reference code for implementation.",1,1,1,0,1,0,0,1,1,0,1,0,1
+shardingsphere,3429,"Sorry, here we need discuss again.
+If it is a select SQL without table, route to slave database is fine, is it?","Yes,  according to my understanding,  from the code :
+`!(sqlStatement instanceof SelectStatement)`,
+If it is a select statement, it will be routed to slave database,  no matter whether the select SQL has a table name.
+For #3273, if it is fine , we can remove the `isSelectWithoutTable ` judgement.
+It means we don't need to make any change with `MasterSlaveRouter`, Do I understand it correctly? ",1,1,1,0,1,0,0,1,1,0,1,0,1
+shardingsphere,9084,"
+I suppose `DROP TABLE from db PURGE` is a more valuable case. Could you add this one or replace that simple one?",Do you mean case like `DROP TABLE db.tableName PURGE`,1,1,0,0,1,0,0,1,1,0,1,0,0
+shardingsphere,25033,Can you modify the kernel logic instead of sql parse logic?,"
+Could you please help me confirm if my understanding is correct that the keywords passed into the`createPatternMatchingOperationSegment` function and the generated `BinaryOperationExpression` are only used for logical judgment and will not affect the rewritten SQL statements? 
+Thank you in advance for your kind assistance.
+
+```txt
+patternMatchingOperator
+    : LIKE
+    | TILDE_TILDE_
+    | NOT LIKE
+    | NOT_TILDE_TILDE_
+    | ILIKE
+    | ILIKE_
+    | NOT ILIKE
+    | NOT_ILIKE_
+    | SIMILAR TO
+    | NOT SIMILAR TO
+    | TILDE_
+    | NOT_ TILDE_
+    | TILDE_ ASTERISK_
+    | NOT_ TILDE_ ASTERISK_
+    ;
+```
+https://github.com/apache/shardingsphere/blob/5.3.1/sql-parser/dialect/postgresql/src/main/antlr4/imports/postgresql/BaseRule.g4#L530",1,1,0,0,1,0,0,1,1,0,1,0,0
+shardingsphere,3526,remove the following 3 lines,I don't quite understand?,1,1,0,0,1,0,0,1,1,0,1,0,0
+shardingsphere,11345,Please refer official code conduct to change the code style.,Do you mean that change 'entry' to 'each'? But it is in a map.,1,1,0,0,1,0,0,1,1,0,1,0,0
+shardingsphere,13943,Licence missing.,"Iâ€™m very sorry,I donâ€™t know how to deal with the license missing.",1,1,0,0,0,0,0,1,1,0,1,0,0
+shardingsphere,15856,Please delete blank lines.,"@yx90 do you want to remove other spaces in the file as well? I have structured it the same way as in the example file given ShardingSpringBootJpaExample.java , but I noticed there was one extra blank line in my example and I have removed it. Can you tell me if you want me to remove the other blank lines as well?",1,1,0,0,1,0,0,1,1,0,1,0,0
+shardingsphere,19352,I don't know why is do that.  Get last actualTableName from bindingTable ?,I don't know why is do that.  Get last actualTableName from bindingTable ?,1,1,0,0,1,0,1,0,1,0,1,1,0
+shardingsphere,3429,"Sorry, here we need discuss again.
+If it is a select SQL without table, route to slave database is fine, is it?","In this case, do we just need to consider the sharding mode?",1,1,0,0,1,0,1,0,1,0,1,1,0
+shiro,1003,"""what was the actual outcome""","So, I change the label to ""what was the actual outcome"" instead of ""What happened"", and add a new textarea with the label ""what did you expect instead""?
+
+",1,1,0,0,1,0,0,0,1,0,1,1,0
+skywalking,4844,Nacos should be removed too.,which shell script? Is it in the repository? this will help us to check the dependencies before commit,1,1,0,0,0,0,0,1,1,0,1,1,0
+solr,427,"I though of removing this code, but did not dare to, as I'm not sure if `getHandler()` may perhaps still return a class  not implementing the interface...","I though of removing this code, but did not dare to, as I'm not sure if `getHandler()` may perhaps still return a class  not implementing the interface...",1,1,0,0,0,0,0,1,0,0,1,0,0
+solr,875,"I would bet logic like this exists for either SimpleOrderedMap or NamedList parsing elsewhere. SOLR-11914 has references to related methods however those methods are going to NamedList, not FROM NamedList. Somewhere in request parsing this has to happen.",Is there anything specific you'd like us to change here? I'm not aware of any existing code we could invoke instead of having the new logic here.,1,1,1,0,0,0,1,1,0,0,0,0,0
+solr,1459,"[-1] Would you be willing to add some coverage here for the new v2 APIs that you added (alias-prop listing, single-alias-prop fetching, etc.)
+
+Would really help people use the alias prop functionality - I think right now the ref-guide suggests that people look in ZK if they need to know alias prop values!","not sure I follow, could you clarify a bit?
+
+I have alias prop listing https://github.com/apache/solr/pull/1459/files#diff-2cc6e0ae57c6bf17247dd5a4386f98b3123544cb816a12fdb864068705970f00R670 and property level get https://github.com/apache/solr/pull/1459/files#diff-2cc6e0ae57c6bf17247dd5a4386f98b3123544cb816a12fdb864068705970f00R685",1,1,1,0,1,0,0,1,0,1,0,0,0
+sqoop,60,I think we mention this potential problem in the documentation somewhere.,"Do you think we should remove this warning? (I think, even if it's redundant, it's useful to write this out.)",1,1,1,0,1,0,0,1,0,1,0,0,0
+storm,2083,If we are going to a common type for *childopts it should be a `List<String>` not `String`.  The reason for a list is that something with whitespace in it can be properly represented this breaks that.,"@revans2 You mean, replace this method with
+```
+public static String getConfigValueAsList(String name, Map<?, ?> conf) {
+    // if the value is a list, return it
+    // if the value is a string, split it by space and return the resulting list
+}
+```
+and the caller can convert it to a space-separated string if needed?",1,1,1,0,1,0,1,0,0,0,1,0,0
+submarine,1020,new class param should also be avoided here.,"Hi @cdmikechen ,
+Not sure what you mean by adding some test cases for the minio client section here.",1,1,1,0,0,0,0,0,0,0,0,0,0
+tinkerpop,889,"We can capture any possible error if we use a chained `catch()`, instead of `then()` with multiple callback functions:
+
+```
+this._authenticator.evaluateChallenge(response)
+  .then(() => {
+    // Any possible error thrown or promise rejection will be captured 
+    return this.submit('', 'authentication', res);
+  })
+  .catch(handler.callback)","On this problem, the issue is that submit creates a new requestId for each message sent. So when sending the auth response a new requestId is created for that authentication response. The Gremlin server responds with the requestId of the previous call so the authentication requestId never gets dealt with. Am I right in thinking that your proposal is to remove all pending handlers from the handler array? Is it safe to assume that there will only ever be one handler at a time in that array, apart from when authentication is happening? Am I making sense?",1,1,1,0,1,0,1,0,0,0,0,0,0
+tomcat,186,"The above code is only used when the Realm is defined at the Context level. That isn't what is required here. The role mappings need to be checked for the current Context irrespective of where the Realm is defined. Something like:
+`Context context = (Context) wrapper.getParent();`
+
+A similar change would also need to be made to `UserDatabaseRealm` and potentially other sub-classes. Consider moving this to `Wrapper.findSecurityReference`. i.e. Look up Wrapper references first and if none found try the Context.","Just take your time to describe how you image that, I do not fully understand it.",1,1,1,0,1,0,1,0,0,0,0,0,0
+tomcat,186,"The only way to add these Context mappings (currently) is via code. There is no mechanism to do this via configuration. Possibly as a separate enhancement, consider adding such an option. See https://bz.apache.org/bugzilla/show_bug.cgi?id=55477","So, if I understand your request properly, this should not be part of `RealmBase` at all, but has to be implemented in `StandardWrapper`, namely `findSecurityReference()` whre it queries `getParent()#findRoleMapping()` if it is not found in `references`?.
+
+So `findSecurityReferences()` have to be changed as well? But not `removeSecurityReference()`?
+
+though, `getParent()` must be still of type `Context` (`instanceof` check)?",1,1,0,0,1,0,0,0,1,1,0,0,0
+tomcat,186,"The only way to add these Context mappings (currently) is via code. There is no mechanism to do this via configuration. Possibly as a separate enhancement, consider adding such an option. See https://bz.apache.org/bugzilla/show_bug.cgi?id=55477","You probably want a `<RoleMapper class="".."" />` with custom attributes. What makes it different to a listener?",1,1,0,0,1,0,0,0,1,1,0,0,0
+tomee,512,"""aparentemente gravar""",What is wrong here?,1,1,0,0,0,0,0,1,0,0,0,0,0
+tomee,218,maybe use Client (jaxrs) instead of a cxf api - without forgetting to close the client ;),"What you mean by ""Use the Client (jaxrs) instead of a cxf api?""?",1,1,0,0,0,0,0,1,0,0,0,0,0
+wicket,376,These method have to much arguments already: Just give it an IValueMap and write all out to the tag.,"I didn't quite get you.  Do you want the `writeJavaScriptUrl(final Response response, final CharSequence url, final String id, boolean defer, String charset, boolean async)` to be dropped?",1,1,0,0,1,0,0,1,0,0,0,1,0
+wicket,601,These are valid changes :)))),"What is your opinion about this refactoring, please? Why do you think there are many cases like `assertTrue(x.equals(y))` and `assertFalse(x.equals(y))` or `assertTrue(!x.equals(y))`, though `assertEquals` and `assertNotEquals` are more readable/intuitive and can provide better error messages in case of failures?",1,1,0,0,0,0,0,1,0,0,0,1,0
+zeppelin,1334,"I think there's a language setting you could add here for syntax highlighting
+","@felixcheung I looked at most interpreters, could you show me an example? 
+",1,0,1,1,1,1,0,1,1,1,0,0,1
+zeppelin,4398,"Possible error.
+This creates ""--proxy-user|user"". desired is ""--proxy-user|user""","Hi @Reamer I'm not sure I can see the bug here, right now the output of this snippet is `--proxy-user|user` and the pipe would be replaced in interpreter.sh with space
+as far as i can see same code snippet can be found in [SparkInterpreterLauncher](https://github.com/apache/zeppelin/blob/c4c580a37fde649553d336984a94bcb1b2821201/zeppelin-zengine/src/main/java/org/apache/zeppelin/interpreter/launcher/SparkInterpreterLauncher.java#L196) ",1,1,1,0,0,1,0,1,1,1,1,1,0
+zookeeper,1266,we also need to assert `True` or `False` ?,"Do you mean things like:
+```
+zkProp.setProperty(""localSessionsEnabled"", ""True"");
+quorumPeerConfig.parseProperties(zkProp);
+assertEquals(true, quorumPeerConfig.areLocalSessionsEnabled());
+
+zkProp.setProperty(""localSessionsEnabled"", ""False"");
+quorumPeerConfig.parseProperties(zkProp);
+assertEquals(false, quorumPeerConfig.areLocalSessionsEnabled());
+```
+to test whether ignoring case can work?",1,1,1,0,0,0,0,1,1,1,1,0,1
+zookeeper,823,"Should we throw an error?
+The command may not have succeeded","@eolivelli  pardon me.I may not get your idea clearly.
+Do you mean that throwing this `TimeoutException`?",1,1,1,0,0,0,0,1,1,1,1,1,0
