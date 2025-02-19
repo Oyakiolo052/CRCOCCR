@@ -12,7 +12,7 @@ Available here: [https://doi.org/10.5281/zenodo.14061622]
 
 ## Run Tool
 BERT and Flan-T5 run on 10GB GPU machine. Possible to run in Google Colab.
-Note: Folder names are organised according to manuscript sections.
+**Note:** Folder names are organised according to manuscript sections.
 
 ## Citation for our dataset
 
